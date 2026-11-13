@@ -1,0 +1,13 @@
+﻿@if (User.Identity?.IsAuthenticated == true)
+{
+    <div class="user-menu">
+        <span class="user-name">@User.Identity.Name</span>
+        <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/Index", new { area = "" })" method="post">
+            <button class="button-quiet" type="submit">Sair</button>
+        </form>
+    </div>
+}
+else
+{
+    <a class="button-quiet" asp-area="Identity" asp-page="/Account/Login">Entrar</a>
+}

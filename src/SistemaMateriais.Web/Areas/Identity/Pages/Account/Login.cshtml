@@ -1,0 +1,50 @@
+@page
+@model SistemaMateriais.Web.Areas.Identity.Pages.Account.LoginModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Entrar";
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1769e0" />
+    <title>Entrar — Gestão de Materiais</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="login-page">
+    <main class="login-shell">
+        <a class="login-brand" asp-area="" asp-page="/Index">
+            <span class="brand-mark" aria-hidden="true">M</span>
+            <span>Gestão de Materiais</span>
+        </a>
+        <section class="login-card" aria-labelledby="login-title">
+            <p class="eyebrow">PILOTO · SETOR DE TI</p>
+            <h1 id="login-title">Acesse sua conta</h1>
+            <p class="muted">Entre com as credenciais fornecidas pelo administrador.</p>
+            <form method="post" asp-route-returnUrl="@Model.ReturnUrl">
+                <div asp-validation-summary="ModelOnly" class="validation-summary" role="alert"></div>
+                <div class="field-group">
+                    <label asp-for="Input.UserName" class="form-label"></label>
+                    <input asp-for="Input.UserName" class="form-control" autocomplete="username" autofocus />
+                    <span asp-validation-for="Input.UserName" class="field-error"></span>
+                </div>
+                <div class="field-group">
+                    <label asp-for="Input.Password" class="form-label"></label>
+                    <input asp-for="Input.Password" class="form-control" autocomplete="current-password" />
+                    <span asp-validation-for="Input.Password" class="field-error"></span>
+                </div>
+                <label class="remember-check">
+                    <input asp-for="Input.RememberMe" />
+                    <span>Manter conectado</span>
+                </label>
+                <button class="button-primary" type="submit">Entrar</button>
+            </form>
+            <p class="login-help">Não tem acesso? Solicite uma conta ao administrador do sistema.</p>
+        </section>
+        <p class="login-footer">Acesso restrito a usuários autorizados.</p>
+    </main>
+</body>
+</html>

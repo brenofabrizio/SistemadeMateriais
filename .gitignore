@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+**/app.db
+**/app.db-shm
+**/app.db-wal
+**/secrets.json
+**/Properties/ServiceDependencies/
+**/Properties/PublishProfiles/
+*.user
+*.suo

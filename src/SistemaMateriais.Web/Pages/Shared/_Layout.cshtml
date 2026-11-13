@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1769e0" />
+    <title>@ViewData["Title"] — Gestão de Materiais</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/SistemaMateriais.Web.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <a class="skip-link" href="#main-content">Ir para o conteúdo principal</a>
+    <div class="app-shell">
+        <aside class="sidebar d-none d-lg-flex" aria-label="Menu lateral">
+            <a class="sidebar-brand" asp-area="" asp-page="/Index">
+                <span class="brand-mark" aria-hidden="true">M</span>
+                <span>Gestão de Materiais</span>
+            </a>
+            <nav class="sidebar-nav" aria-label="Navegação principal">
+                <span class="nav-group">ESTOQUE</span>
+                <a class="nav-link active" asp-area="" asp-page="/Index" aria-current="page"><span aria-hidden="true">▦</span> Painel</a>
+                <span class="nav-link is-disabled" aria-disabled="true"><span aria-hidden="true">▤</span> Materiais <small>Em breve</small></span>
+                <span class="nav-link is-disabled" aria-disabled="true"><span aria-hidden="true">↕</span> Movimentações <small>Em breve</small></span>
+                <span class="nav-link is-disabled" aria-disabled="true"><span aria-hidden="true">⌕</span> Histórico <small>Em breve</small></span>
+            </nav>
+            <div class="sidebar-footer">Piloto · Setor de TI</div>
+        </aside>
+
+        <div class="main-area">
+            <header class="topbar">
+                <button class="menu-button d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNav" aria-controls="mobileNav" aria-label="Abrir menu">☰</button>
+                <h1>@ViewData["Title"]</h1>
+                <partial name="_LoginPartial" />
+            </header>
+            <div class="offcanvas offcanvas-start mobile-nav" tabindex="-1" id="mobileNav" aria-labelledby="mobileNavTitle">
+                <div class="offcanvas-header">
+                    <h2 class="offcanvas-title" id="mobileNavTitle">Gestão de Materiais</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fechar menu"></button>
+                </div>
+                <nav class="offcanvas-body sidebar-nav" aria-label="Navegação principal">
+                    <span class="nav-group">ESTOQUE</span>
+                    <a class="nav-link active" asp-area="" asp-page="/Index" aria-current="page"><span aria-hidden="true">▦</span> Painel</a>
+                    <span class="nav-link is-disabled" aria-disabled="true"><span aria-hidden="true">▤</span> Materiais <small>Em breve</small></span>
+                    <span class="nav-link is-disabled" aria-disabled="true"><span aria-hidden="true">↕</span> Movimentações <small>Em breve</small></span>
+                    <span class="nav-link is-disabled" aria-disabled="true"><span aria-hidden="true">⌕</span> Histórico <small>Em breve</small></span>
+                </nav>
+            </div>
+            <main id="main-content" class="page-content" role="main" tabindex="-1">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

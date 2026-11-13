@@ -1,0 +1,39 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Painel de estoque";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">VISÃO GERAL · TI</p>
+        <h2>Seu estoque, em um só lugar</h2>
+        <p class="muted">A base do sistema está pronta. O catálogo e as movimentações entram na próxima etapa.</p>
+    </div>
+</section>
+
+<section class="metric-grid" aria-label="Indicadores do estoque">
+    <article class="metric-card">
+        <span class="metric-label">Materiais cadastrados</span>
+        <strong class="metric-value">—</strong>
+        <span class="metric-note">Aguardando cadastro do catálogo</span>
+    </article>
+    <article class="metric-card">
+        <span class="metric-label">Estoque baixo</span>
+        <strong class="metric-value">—</strong>
+        <span class="metric-note">Alertas serão exibidos aqui</span>
+    </article>
+    <article class="metric-card">
+        <span class="metric-label">Empréstimos em aberto</span>
+        <strong class="metric-value">—</strong>
+        <span class="metric-note">Controle de ativos será adicionado</span>
+    </article>
+</section>
+
+<section class="content-card empty-state" aria-labelledby="activity-title">
+    <div class="empty-icon" aria-hidden="true">↕</div>
+    <div>
+        <h3 id="activity-title">As movimentações aparecerão aqui</h3>
+        <p class="muted">Quando o catálogo estiver disponível, você poderá acompanhar entradas, consumos, empréstimos e devoluções.</p>
+    </div>
+</section>

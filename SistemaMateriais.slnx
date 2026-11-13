@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SistemaMateriais.Web/SistemaMateriais.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SistemaMateriais.Web.Tests/SistemaMateriais.Web.Tests.csproj" />
+  </Folder>
+</Solution>
