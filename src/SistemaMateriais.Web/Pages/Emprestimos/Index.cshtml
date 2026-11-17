@@ -1,0 +1,108 @@
+@page "/Emprestimos"
+@model SistemaMateriais.Web.Pages.Emprestimos.IndexModel
+@{
+    ViewData["Title"] = "Empréstimos";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">ESTOQUE · TI</p>
+        <h2>Empréstimos</h2>
+        <p class="muted">Empreste materiais por quantidade e registre as devoluções com trilha de auditoria.</p>
+    </div>
+</section>
+
+<section class="content-card material-create" aria-labelledby="loan-create-title">
+    <h3 id="loan-create-title">Registrar empréstimo</h3>
+    <form method="post" asp-page-handler="Loan">
+        <input type="hidden" asp-for="LoanSubmissionId" />
+        <div asp-validation-summary="All" class="validation-summary" role="alert"></div>
+        <div class="material-form-grid">
+            <div class="field-group">
+                <label asp-for="MaterialId" class="form-label">Material</label>
+                <select asp-for="MaterialId" class="form-control">
+                    <option value="">Selecione um material</option>
+                    @foreach (var material in Model.Materials)
+                    {
+                        <option value="@material.Id">@material.Code — @material.Name (@material.Unit; @material.TrackingMode)</option>
+                    }
+                </select>
+                <span asp-validation-for="MaterialId" class="field-error"></span>
+            </div>
+            <div class="field-group">
+                <label asp-for="BorrowerName" class="form-label">Responsável pelo empréstimo</label>
+                <input asp-for="BorrowerName" class="form-control" maxlength="120" autocomplete="name" />
+                <span asp-validation-for="BorrowerName" class="field-error"></span>
+            </div>
+            <div class="field-group">
+                <label asp-for="Quantity" class="form-label">Quantidade</label>
+                <input asp-for="Quantity" class="form-control" type="number" min="0.001" step="0.001" />
+                <span asp-validation-for="Quantity" class="field-error"></span>
+            </div>
+            <div class="field-group">
+                <label asp-for="DueDate" class="form-label">Previsão de devolução (opcional)</label>
+                <input asp-for="DueDate" class="form-control" type="date" />
+                <span asp-validation-for="DueDate" class="field-error"></span>
+            </div>
+            <div class="field-group material-description-field">
+                <label asp-for="Reference" class="form-label">Protocolo ou referência (opcional)</label>
+                <input asp-for="Reference" class="form-control" maxlength="200" />
+                <span asp-validation-for="Reference" class="field-error"></span>
+            </div>
+        </div>
+        <button class="button-primary" type="submit">Registrar empréstimo</button>
+    </form>
+</section>
+
+<section class="content-card catalog-card" aria-labelledby="open-loans-title">
+    <div class="catalog-card-heading">
+        <h3 id="open-loans-title">Empréstimos em aberto</h3>
+        <span class="count-badge">@Model.OpenLoans.Count</span>
+    </div>
+    @if (Model.OpenLoans.Count == 0)
+    {
+        <div class="catalog-empty" role="status">
+            <p>Nenhum empréstimo em aberto.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="catalog-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Material</th>
+                        <th scope="col">Responsável</th>
+                        <th scope="col">Emprestado</th>
+                        <th scope="col">Em aberto</th>
+                        <th scope="col">Previsão</th>
+                        <th scope="col">Referência</th>
+                        <th scope="col">Registrar devolução</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.OpenLoans)
+                    {
+                        <tr>
+                            <td>@item.Loan.Material.Code — @item.Loan.Material.Name</td>
+                            <td>@item.Loan.BorrowerName</td>
+                            <td>@item.Loan.Quantity.ToString("0.###")</td>
+                            <td>@item.Outstanding.ToString("0.###")</td>
+                            <td>@(item.Loan.DueAtUtc?.ToString("yyyy-MM-dd") ?? "—")</td>
+                            <td>@(item.Loan.Reference ?? $"EM-{item.Loan.Id}")</td>
+                            <td>
+                                <form method="post" asp-page-handler="Return" class="loan-return-form">
+                                    <input type="hidden" asp-for="LoanId" value="@item.Loan.Id" />
+                                    <input type="hidden" name="ReturnSubmissionId" value="@Guid.NewGuid()" />
+                                    <label asp-for="ReturnQuantity" class="visually-hidden">Quantidade a devolver do empréstimo @item.Loan.Id</label>
+                                    <input asp-for="ReturnQuantity" class="form-control" type="number" min="0.001" max="@item.Outstanding.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)" step="0.001" value="@item.Outstanding.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)" />
+                                    <button class="button-secondary" type="submit">Registrar devolução</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

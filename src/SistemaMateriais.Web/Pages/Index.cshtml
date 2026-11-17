@@ -7,33 +7,123 @@
 <section class="page-heading">
     <div>
         <p class="eyebrow">VISÃO GERAL · TI</p>
-        <h2>Seu estoque, em um só lugar</h2>
-        <p class="muted">A base do sistema está pronta. O catálogo e as movimentações entram na próxima etapa.</p>
+        <h2>Resumo do estoque</h2>
+        <p class="muted">Indicadores e últimas movimentações do setor de TI.</p>
     </div>
 </section>
 
 <section class="metric-grid" aria-label="Indicadores do estoque">
     <article class="metric-card">
-        <span class="metric-label">Materiais cadastrados</span>
-        <strong class="metric-value">—</strong>
-        <span class="metric-note">Aguardando cadastro do catálogo</span>
+        <span class="metric-label">Materiais ativos</span>
+        <strong class="metric-value" data-metric="materials">@Model.MaterialCount</strong>
+        <span class="metric-note">No catálogo do setor TI</span>
     </article>
     <article class="metric-card">
-        <span class="metric-label">Estoque baixo</span>
-        <strong class="metric-value">—</strong>
-        <span class="metric-note">Alertas serão exibidos aqui</span>
+        <span class="metric-label">Estoque abaixo do mínimo</span>
+        <strong class="metric-value" data-metric="low-stock">@Model.LowStockCount</strong>
+        <span class="metric-note">Considera o saldo registrado</span>
     </article>
     <article class="metric-card">
         <span class="metric-label">Empréstimos em aberto</span>
-        <strong class="metric-value">—</strong>
-        <span class="metric-note">Controle de ativos será adicionado</span>
+        <strong class="metric-value" data-metric="open-loans">@Model.OpenLoanCount</strong>
+        <span class="metric-note">Com quantidade pendente de devolução</span>
     </article>
 </section>
 
-<section class="content-card empty-state" aria-labelledby="activity-title">
-    <div class="empty-icon" aria-hidden="true">↕</div>
-    <div>
-        <h3 id="activity-title">As movimentações aparecerão aqui</h3>
-        <p class="muted">Quando o catálogo estiver disponível, você poderá acompanhar entradas, consumos, empréstimos e devoluções.</p>
+@if (Model.LowStockCount > 0)
+{
+    <div class="stock-alert" role="status" data-stock-alert>
+        <p><strong>Atenção:</strong> @Model.LowStockCount @(Model.LowStockCount == 1 ? "material está" : "materiais estão") abaixo do estoque mínimo.</p>
+        <a href="#low-stock-title">Ver materiais para reposição</a>
     </div>
+}
+
+<section class="content-card catalog-card" aria-labelledby="low-stock-title">
+    <div class="catalog-card-heading">
+        <h3 id="low-stock-title">Materiais para reposição</h3>
+        <span class="count-badge">@Model.LowStockMaterials.Count</span>
+        <a asp-page-handler="LowStockCsv">Exportar lista de reposição em CSV</a>
+    </div>
+    @if (Model.LowStockMaterials.Count == 0)
+    {
+        <div class="catalog-empty" role="status">
+            <p>Nenhum material abaixo do estoque mínimo.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="catalog-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Material</th>
+                        <th scope="col">Saldo atual</th>
+                        <th scope="col">Mínimo</th>
+                        <th scope="col">Unidade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.LowStockMaterials)
+                    {
+                        <tr>
+                            <td>@item.Material.Code — @item.Material.Name</td>
+                            <td>@item.Balance.ToString("0.###")</td>
+                            <td>@item.Material.MinimumStock.ToString("0.###")</td>
+                            <td>@item.Material.Unit</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<section class="content-card catalog-card" aria-labelledby="activity-title">
+    <div class="catalog-card-heading">
+        <h3 id="activity-title">Últimas movimentações</h3>
+        <a asp-page="/Movimentacoes/Index">Ver histórico completo</a>
+    </div>
+    @if (Model.RecentMovements.Count == 0)
+    {
+        <div class="catalog-empty" role="status">
+            <p>Nenhuma movimentação registrada.</p>
+            <span class="muted">As entradas e saídas aparecerão aqui.</span>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="catalog-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Data/hora (UTC)</th>
+                        <th scope="col">Material</th>
+                        <th scope="col">Tipo</th>
+                        <th scope="col">Quantidade</th>
+                        <th scope="col">Referência</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var movement in Model.RecentMovements)
+                    {
+                        <tr>
+                            <td>@movement.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")</td>
+                            <td>@movement.Material.Code — @movement.Material.Name</td>
+                            <td>@(movement.Type switch
+                                {
+                                    InventoryMovementType.Entry => "Entrada",
+                                    InventoryMovementType.Consumption => "Consumo",
+                                    InventoryMovementType.Loan => "Empréstimo",
+                                    InventoryMovementType.Return => "Devolução",
+                                    InventoryMovementType.Adjustment => "Ajuste",
+                                    _ => movement.Type.ToString()
+                                })</td>
+                            <td>@movement.Quantity.ToString("0.###")</td>
+                            <td>@movement.Reference</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
 </section>

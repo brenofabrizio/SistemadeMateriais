@@ -1,0 +1,112 @@
+@page "/Movimentacoes"
+@model SistemaMateriais.Web.Pages.Movimentacoes.IndexModel
+@{
+    ViewData["Title"] = "Histórico de movimentações";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">ESTOQUE · TI</p>
+        <h2>Histórico de movimentações</h2>
+        <p class="muted">Consulte os lançamentos registrados no setor autorizado.</p>
+    </div>
+</section>
+
+<section class="content-card" aria-labelledby="movement-history-title">
+    <h3 id="movement-history-title">Filtros</h3>
+    <form method="get" class="catalog-search">
+        <div class="material-form-grid">
+            <div class="field-group">
+                <label asp-for="MaterialId" class="form-label">Material</label>
+                <select asp-for="MaterialId" class="form-control">
+                    <option value="">Todos os materiais</option>
+                    @foreach (var material in Model.Materials)
+                    {
+                        <option value="@material.Id">@material.Code — @material.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="field-group">
+                <label asp-for="Type" class="form-label">Tipo</label>
+                <select asp-for="Type" class="form-control">
+                    <option value="">Todos os tipos</option>
+                    <option value="Entry">Entrada</option>
+                    <option value="Consumption">Consumo</option>
+                    <option value="Loan">Empréstimo</option>
+                    <option value="Return">Devolução</option>
+                    <option value="Adjustment">Ajuste</option>
+                </select>
+            </div>
+            <div class="field-group">
+                <label asp-for="From" class="form-label">De</label>
+                <input asp-for="From" class="form-control" type="date" />
+            </div>
+            <div class="field-group">
+                <label asp-for="To" class="form-label">Até</label>
+                <input asp-for="To" class="form-control" type="date" />
+            </div>
+            <div class="field-group">
+                <label asp-for="Actor" class="form-label">Usuário</label>
+                <input asp-for="Actor" class="form-control" maxlength="120" />
+            </div>
+        </div>
+        <button class="button-secondary" type="submit">Aplicar filtros</button>
+    </form>
+    <a asp-page-handler="ExportCsv"
+       asp-route-MaterialId="@Model.MaterialId"
+       asp-route-Type="@Model.Type"
+       asp-route-From="@(Model.From?.ToString("yyyy-MM-dd"))"
+       asp-route-To="@(Model.To?.ToString("yyyy-MM-dd"))"
+       asp-route-Actor="@Model.Actor">Exportar resultados filtrados em CSV</a>
+</section>
+
+<section class="content-card catalog-card" aria-labelledby="movement-list-title">
+    <div class="catalog-card-heading">
+        <h3 id="movement-list-title">Movimentações</h3>
+        <span class="count-badge">@Model.Movements.Count</span>
+    </div>
+    @if (Model.Movements.Count == 0)
+    {
+        <div class="catalog-empty" role="status">
+            <p>Nenhuma movimentação encontrada.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="catalog-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Data/hora (UTC)</th>
+                        <th scope="col">Material</th>
+                        <th scope="col">Tipo</th>
+                        <th scope="col">Quantidade</th>
+                        <th scope="col">Referência</th>
+                        <th scope="col">Usuário</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var movement in Model.Movements)
+                    {
+                        <tr>
+                            <td>@movement.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")</td>
+                            <td>@movement.Material.Code — @movement.Material.Name</td>
+                            <td>@(movement.Type switch
+                                {
+                                    InventoryMovementType.Entry => "Entrada",
+                                    InventoryMovementType.Consumption => "Consumo",
+                                    InventoryMovementType.Loan => "Empréstimo",
+                                    InventoryMovementType.Return => "Devolução",
+                                    InventoryMovementType.Adjustment => "Ajuste",
+                                    _ => movement.Type.ToString()
+                                })</td>
+                            <td>@movement.Quantity.ToString("0.###")</td>
+                            <td>@movement.Reference</td>
+                            <td>@movement.ActorName</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

@@ -1,0 +1,68 @@
+@page "/Materiais/Editar/{id:int}"
+@model SistemaMateriais.Web.Pages.Materiais.EditarModel
+@{
+    ViewData["Title"] = "Editar material";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">CATÁLOGO · TI</p>
+        <h2>Editar material</h2>
+        <p class="muted">Atualize os dados do item sem apagar seu histórico.</p>
+    </div>
+    <a class="button-quiet" asp-page="/Materiais/Index">Voltar aos materiais</a>
+</section>
+
+<section class="content-card material-create" aria-labelledby="edit-material-title">
+    <h3 id="edit-material-title">Dados do material</h3>
+    <form method="post">
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="validation-summary" role="alert"></div>
+        <div class="material-form-grid">
+            <div class="field-group">
+                <label asp-for="Code" class="form-label">Código</label>
+                <input asp-for="Code" class="form-control" maxlength="40" autocomplete="off" />
+                <span asp-validation-for="Code" class="field-error"></span>
+            </div>
+            <div class="field-group">
+                <label asp-for="Name" class="form-label">Nome</label>
+                <input asp-for="Name" class="form-control" maxlength="120" autocomplete="off" />
+                <span asp-validation-for="Name" class="field-error"></span>
+            </div>
+            <div class="field-group">
+                <label asp-for="CategoryId" class="form-label">Categoria</label>
+                <select asp-for="CategoryId" class="form-control">
+                    @foreach (var category in Model.Categories)
+                    {
+                        <option value="@category.Id">@category.Name@(category.IsActive ? string.Empty : " (inativa)")</option>
+                    }
+                </select>
+                <span asp-validation-for="CategoryId" class="field-error"></span>
+            </div>
+            <div class="field-group">
+                <label asp-for="Unit" class="form-label">Unidade de medida</label>
+                <input asp-for="Unit" class="form-control" maxlength="20" />
+                <span asp-validation-for="Unit" class="field-error"></span>
+            </div>
+            <div class="field-group">
+                <label asp-for="TrackingMode" class="form-label">Tipo de controle</label>
+                <select asp-for="TrackingMode" class="form-control">
+                    <option value="Quantity">Por quantidade</option>
+                    <option value="IndividualAsset">Unidade individual (série/patrimônio)</option>
+                </select>
+                <span asp-validation-for="TrackingMode" class="field-error"></span>
+            </div>
+            <div class="field-group">
+                <label asp-for="MinimumStock" class="form-label">Estoque mínimo</label>
+                <input asp-for="MinimumStock" class="form-control" min="0" max="999999999.999" step="0.001" inputmode="decimal" />
+                <span asp-validation-for="MinimumStock" class="field-error"></span>
+            </div>
+            <div class="field-group material-description-field">
+                <label asp-for="Description" class="form-label">Descrição (opcional)</label>
+                <textarea asp-for="Description" class="form-control" maxlength="500" rows="2"></textarea>
+                <span asp-validation-for="Description" class="field-error"></span>
+            </div>
+        </div>
+        <button class="button-primary" type="submit">Salvar alterações</button>
+    </form>
+</section>

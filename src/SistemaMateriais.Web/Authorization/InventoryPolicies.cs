@@ -15,6 +15,7 @@ public static class InventoryPolicies
     public const string OperateStock = "OperateStock";
     public const string AdjustStock = "AdjustStock";
     public const string ApproveAdjustments = "ApproveAdjustments";
+    public const string ManageCatalog = "ManageCatalog";
 
     public static void Configure(AuthorizationOptions options)
     {
@@ -29,6 +30,10 @@ public static class InventoryPolicies
             InventoryRoles.Manager));
 
         options.AddPolicy(ApproveAdjustments, policy => policy.RequireRole(
+            InventoryRoles.Administrator,
+            InventoryRoles.Manager));
+
+        options.AddPolicy(ManageCatalog, policy => policy.RequireRole(
             InventoryRoles.Administrator,
             InventoryRoles.Manager));
     }

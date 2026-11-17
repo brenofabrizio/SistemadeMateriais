@@ -222,6 +222,387 @@ namespace SistemaMateriais.Web.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("SistemaMateriais.Web.Data.InventoryAdjustmentRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset?>("DecidedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DecidedByName")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("DecidedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.Property<decimal>("DeltaQuantity")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)");
+
+                    b.Property<int>("MaterialId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset>("RequestedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RequestedByName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("RequestedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.Property<int>("SectorId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("SubmissionFingerprint")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid?>("SubmissionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SectorId", "MaterialId");
+
+                    b.HasIndex("SectorId", "RequestedByUserId", "SubmissionId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_AdjustmentRequests_SectorId_RequestedByUserId_SubmissionId");
+
+                    b.HasIndex("SectorId", "Status", "RequestedAtUtc");
+
+                    b.ToTable("InventoryAdjustmentRequests");
+                });
+
+            modelBuilder.Entity("SistemaMateriais.Web.Data.InventoryAsset", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Identifier")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<int>("MaterialId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("NormalizedIdentifier")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<DateTimeOffset>("RegisteredAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RegisteredByName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("RegisteredByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.Property<int>("SectorId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SectorId", "NormalizedIdentifier")
+                        .IsUnique();
+
+                    b.HasIndex("SectorId", "MaterialId", "Status");
+
+                    b.ToTable("InventoryAssets");
+                });
+
+            modelBuilder.Entity("SistemaMateriais.Web.Data.InventoryLoan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BorrowerName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedByName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("CreatedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.Property<DateTimeOffset?>("DueAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("InventoryAssetId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaterialId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("SectorId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InventoryAssetId");
+
+                    b.HasIndex("SectorId", "InventoryAssetId");
+
+                    b.HasIndex("SectorId", "MaterialId", "CreatedAtUtc");
+
+                    b.ToTable("InventoryLoans");
+                });
+
+            modelBuilder.Entity("SistemaMateriais.Web.Data.InventoryMovement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActorName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("ActorUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("InventoryAdjustmentRequestId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("InventoryAssetId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("InventoryLoanId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaterialId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("SectorId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SubmissionFingerprint")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid?>("SubmissionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InventoryAdjustmentRequestId");
+
+                    b.HasIndex("InventoryAssetId");
+
+                    b.HasIndex("InventoryLoanId");
+
+                    b.HasIndex("SectorId", "InventoryAdjustmentRequestId");
+
+                    b.HasIndex("SectorId", "InventoryAssetId");
+
+                    b.HasIndex("SectorId", "InventoryLoanId");
+
+                    b.HasIndex("SectorId", "ActorUserId", "SubmissionId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_InventoryMovements_SectorId_ActorUserId_SubmissionId");
+
+                    b.HasIndex("SectorId", "MaterialId", "CreatedAtUtc");
+
+                    b.ToTable("InventoryMovements");
+                });
+
+            modelBuilder.Entity("SistemaMateriais.Web.Data.Material", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("MinimumStock")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("NormalizedCode")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<int>("SectorId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TrackingMode")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SectorId", "CategoryId");
+
+                    b.HasIndex("SectorId", "NormalizedCode")
+                        .IsUnique();
+
+                    b.ToTable("Materials");
+                });
+
+            modelBuilder.Entity("SistemaMateriais.Web.Data.MaterialCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<int>("SectorId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SectorId", "NormalizedName")
+                        .IsUnique();
+
+                    b.ToTable("MaterialCategories");
+                });
+
+            modelBuilder.Entity("SistemaMateriais.Web.Data.Sector", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Sectors");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            IsActive = true,
+                            Name = "TI"
+                        });
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -271,6 +652,149 @@ namespace SistemaMateriais.Web.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("SistemaMateriais.Web.Data.InventoryAdjustmentRequest", b =>
+                {
+                    b.HasOne("SistemaMateriais.Web.Data.Sector", "Sector")
+                        .WithMany()
+                        .HasForeignKey("SectorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SistemaMateriais.Web.Data.Material", "Material")
+                        .WithMany()
+                        .HasForeignKey("SectorId", "MaterialId")
+                        .HasPrincipalKey("SectorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Material");
+
+                    b.Navigation("Sector");
+                });
+
+            modelBuilder.Entity("SistemaMateriais.Web.Data.InventoryAsset", b =>
+                {
+                    b.HasOne("SistemaMateriais.Web.Data.Sector", "Sector")
+                        .WithMany()
+                        .HasForeignKey("SectorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SistemaMateriais.Web.Data.Material", "Material")
+                        .WithMany()
+                        .HasForeignKey("SectorId", "MaterialId")
+                        .HasPrincipalKey("SectorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Material");
+
+                    b.Navigation("Sector");
+                });
+
+            modelBuilder.Entity("SistemaMateriais.Web.Data.InventoryLoan", b =>
+                {
+                    b.HasOne("SistemaMateriais.Web.Data.Sector", "Sector")
+                        .WithMany()
+                        .HasForeignKey("SectorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SistemaMateriais.Web.Data.InventoryAsset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("SectorId", "InventoryAssetId")
+                        .HasPrincipalKey("SectorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SistemaMateriais.Web.Data.Material", "Material")
+                        .WithMany()
+                        .HasForeignKey("SectorId", "MaterialId")
+                        .HasPrincipalKey("SectorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Asset");
+
+                    b.Navigation("Material");
+
+                    b.Navigation("Sector");
+                });
+
+            modelBuilder.Entity("SistemaMateriais.Web.Data.InventoryMovement", b =>
+                {
+                    b.HasOne("SistemaMateriais.Web.Data.Sector", "Sector")
+                        .WithMany()
+                        .HasForeignKey("SectorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SistemaMateriais.Web.Data.InventoryAdjustmentRequest", "AdjustmentRequest")
+                        .WithMany()
+                        .HasForeignKey("SectorId", "InventoryAdjustmentRequestId")
+                        .HasPrincipalKey("SectorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SistemaMateriais.Web.Data.InventoryAsset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("SectorId", "InventoryAssetId")
+                        .HasPrincipalKey("SectorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SistemaMateriais.Web.Data.InventoryLoan", "Loan")
+                        .WithMany()
+                        .HasForeignKey("SectorId", "InventoryLoanId")
+                        .HasPrincipalKey("SectorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SistemaMateriais.Web.Data.Material", "Material")
+                        .WithMany()
+                        .HasForeignKey("SectorId", "MaterialId")
+                        .HasPrincipalKey("SectorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AdjustmentRequest");
+
+                    b.Navigation("Asset");
+
+                    b.Navigation("Loan");
+
+                    b.Navigation("Material");
+
+                    b.Navigation("Sector");
+                });
+
+            modelBuilder.Entity("SistemaMateriais.Web.Data.Material", b =>
+                {
+                    b.HasOne("SistemaMateriais.Web.Data.Sector", "Sector")
+                        .WithMany()
+                        .HasForeignKey("SectorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SistemaMateriais.Web.Data.MaterialCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("SectorId", "CategoryId")
+                        .HasPrincipalKey("SectorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Sector");
+                });
+
+            modelBuilder.Entity("SistemaMateriais.Web.Data.MaterialCategory", b =>
+                {
+                    b.HasOne("SistemaMateriais.Web.Data.Sector", "Sector")
+                        .WithMany()
+                        .HasForeignKey("SectorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Sector");
                 });
 #pragma warning restore 612, 618
         }

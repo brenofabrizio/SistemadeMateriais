@@ -1,0 +1,130 @@
+@page "/Ativos"
+@model SistemaMateriais.Web.Pages.Ativos.IndexModel
+@{
+    ViewData["Title"] = "Ativos individualizados";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">ESTOQUE · TI</p>
+        <h2>Ativos individualizados</h2>
+        <p class="muted">Cadastre cada unidade pelo número de série ou patrimônio; o saldo é atualizado por movimentação auditável.</p>
+    </div>
+</section>
+
+<section class="content-card material-create" aria-labelledby="asset-register-title">
+    <h3 id="asset-register-title">Registrar unidade recebida</h3>
+    <form method="post" asp-page-handler="Register">
+        <input asp-for="AssetRegistrationSubmissionId" type="hidden" />
+        <div asp-validation-summary="All" class="validation-summary" role="alert"></div>
+        <div class="material-form-grid">
+            <div class="field-group">
+                <label asp-for="MaterialId" class="form-label">Material</label>
+                <select asp-for="MaterialId" class="form-control">
+                    <option value="0">Selecione um material individualizado</option>
+                    @foreach (var material in Model.Materials)
+                    {
+                        <option value="@material.Id">@material.Code — @material.Name</option>
+                    }
+                </select>
+                <span asp-validation-for="MaterialId" class="field-error"></span>
+            </div>
+            <div class="field-group">
+                <label asp-for="Identifier" class="form-label">Número de série ou patrimônio</label>
+                <input asp-for="Identifier" class="form-control" maxlength="120" autocomplete="off" />
+                <span asp-validation-for="Identifier" class="field-error"></span>
+            </div>
+            <div class="field-group material-description-field">
+                <label asp-for="Reference" class="form-label">Nota fiscal ou referência (opcional)</label>
+                <input asp-for="Reference" class="form-control" maxlength="200" />
+                <span asp-validation-for="Reference" class="field-error"></span>
+            </div>
+        </div>
+        <button class="button-primary" type="submit">Registrar unidade</button>
+    </form>
+</section>
+
+<section class="content-card catalog-card" aria-labelledby="assets-list-title">
+    <div class="catalog-card-heading">
+        <h3 id="assets-list-title">Unidades registradas</h3>
+        <span class="count-badge">@Model.Assets.Count</span>
+    </div>
+    @if (Model.Assets.Count == 0)
+    {
+        <div class="catalog-empty" role="status">
+            <p>Nenhum ativo individualizado cadastrado.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="catalog-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Identificador</th>
+                        <th scope="col">Material</th>
+                        <th scope="col">Situação</th>
+                        <th scope="col">Registrado por</th>
+                        <th scope="col">Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var asset in Model.Assets)
+                    {
+                        <tr>
+                            <td>@asset.Identifier</td>
+                            <td><strong>@asset.Material.Code</strong><br /><span class="muted">@asset.Material.Name</span></td>
+                            <td>@(asset.Status switch
+                                {
+                                    InventoryAssetStatus.Available => "Em estoque",
+                                    InventoryAssetStatus.Loaned => "Emprestado",
+                                    InventoryAssetStatus.Consumed => "Consumido",
+                                    InventoryAssetStatus.Retired => "Baixado",
+                                    _ => "Desconhecido"
+                                })</td>
+                            <td>@asset.RegisteredByName</td>
+                            <td>
+                                @if (asset.Status == InventoryAssetStatus.Available)
+                                {
+                                    <form method="post" asp-page-handler="LoanAsset" class="asset-loan-form">
+                                        <input type="hidden" name="AssetId" value="@asset.Id" />
+                                        <input type="hidden" name="AssetLoanSubmissionId" value="@Guid.NewGuid()" />
+                                        <label class="visually-hidden" for="borrower-@asset.Id">Responsável pelo empréstimo de @asset.Identifier</label>
+                                        <input id="borrower-@asset.Id" name="BorrowerName" class="form-control" maxlength="120" required placeholder="Responsável" />
+                                        <input name="DueDate" class="form-control" type="date" aria-label="Previsão de devolução de @asset.Identifier (opcional)" />
+                                        <input name="LoanReference" class="form-control" maxlength="200" placeholder="Referência (opcional)" aria-label="Referência do empréstimo de @asset.Identifier (opcional)" />
+                                        @Html.AntiForgeryToken()
+                                        <button class="button-secondary" type="submit">Emprestar</button>
+                                    </form>
+                                    <form method="post" asp-page-handler="ConsumeAsset" class="asset-loan-form">
+                                        <input type="hidden" name="AssetId" value="@asset.Id" />
+                                        <input type="hidden" name="AssetConsumptionSubmissionId" value="@Guid.NewGuid()" />
+                                        <label class="visually-hidden" for="consumption-reference-@asset.Id">Referência do consumo de @asset.Identifier</label>
+                                        <input id="consumption-reference-@asset.Id" name="Reference" class="form-control" maxlength="200" placeholder="Referência do consumo (opcional)" />
+                                        @Html.AntiForgeryToken()
+                                        <button class="button-secondary" type="submit">Registrar consumo</button>
+                                    </form>
+                                }
+                                else if (asset.Status == InventoryAssetStatus.Loaned)
+                                {
+                                    var openLoan = Model.OpenAssetLoans.Select(item => item.Loan)
+                                        .FirstOrDefault(loan => loan.InventoryAssetId == asset.Id);
+                                    if (openLoan is not null)
+                                    {
+                                        <p class="muted">Com @openLoan.BorrowerName</p>
+                                        <form method="post" asp-page-handler="ReturnAsset">
+                                            <input type="hidden" name="LoanId" value="@openLoan.Id" />
+                                            <input type="hidden" name="AssetReturnSubmissionId" value="@Guid.NewGuid()" />
+                                            @Html.AntiForgeryToken()
+                                            <button class="button-secondary" type="submit">Registrar devolução</button>
+                                        </form>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

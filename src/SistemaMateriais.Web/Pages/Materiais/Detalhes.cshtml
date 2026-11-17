@@ -1,0 +1,34 @@
+@page "/Materiais/Detalhes/{id:int}"
+@model SistemaMateriais.Web.Pages.Materiais.DetalhesModel
+@{
+    ViewData["Title"] = "Detalhes do material";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">CATÁLOGO · TI</p>
+        <h2>@Model.Material.Name</h2>
+        <p class="muted">Detalhes do material e saldo atual calculado pelo livro de movimentações.</p>
+    </div>
+    <a class="button-quiet" asp-page="/Materiais/Index">Voltar aos materiais</a>
+</section>
+
+<section class="content-card material-details-card" aria-labelledby="material-details-title">
+    <div class="catalog-card-heading">
+        <h3 id="material-details-title">Dados do material</h3>
+        <span class="status-badge">@(Model.Material.IsActive ? "Ativo" : "Inativo")</span>
+    </div>
+    <dl class="material-details-grid">
+        <div><dt>Código</dt><dd>@Model.Material.Code</dd></div>
+        <div><dt>Categoria</dt><dd>@Model.Material.Category.Name</dd></div>
+        <div><dt>Unidade</dt><dd>@Model.Material.Unit</dd></div>
+        <div><dt>Controle</dt><dd>@(Model.Material.TrackingMode == MaterialTrackingMode.Quantity ? "Quantidade" : "Unidade individual")</dd></div>
+        <div><dt>Estoque mínimo</dt><dd>@Model.Material.MinimumStock.ToString("0.###")</dd></div>
+        <div><dt>Saldo atual</dt><dd data-material-balance>@Model.StockBalance.ToString("0.###")</dd></div>
+        <div class="material-details-description"><dt>Descrição</dt><dd>@(string.IsNullOrWhiteSpace(Model.Material.Description) ? "Sem descrição" : Model.Material.Description)</dd></div>
+    </dl>
+    <div class="material-details-actions">
+        <a class="button-secondary" asp-page="/Movimentacoes/Index" asp-route-MaterialId="@Model.Material.Id">Ver histórico de movimentações</a>
+        <a asp-page="/Materiais/Index">Voltar ao catálogo</a>
+    </div>
+</section>

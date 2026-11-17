@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: sistema_materiais_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d sistema_materiais_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Install .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore dependencies
+        run: dotnet restore SistemaMateriais.slnx
+
+      - name: Run standard tests
+        run: dotnet test SistemaMateriais.slnx --no-restore
+        env:
+          Database__Provider: Sqlite
+          SISTEMAMATERIAIS_POSTGRES_TESTS: "0"
+          ConnectionStrings__PostgreSql: ""
+
+      - name: Restore local tools
+        run: dotnet tool restore
+
+      - name: Apply PostgreSQL migrations
+        run: dotnet tool run dotnet-ef database update --project src/SistemaMateriais.Web/SistemaMateriais.Web.csproj --startup-project src/SistemaMateriais.Web/SistemaMateriais.Web.csproj
+        env:
+          Database__Provider: PostgreSql
+          ConnectionStrings__PostgreSql: Host=localhost;Port=5432;Database=sistema_materiais_test;Username=postgres;Password=postgres
+
+      - name: Run PostgreSQL integration tests
+        run: dotnet test tests/SistemaMateriais.Web.Tests/SistemaMateriais.Web.Tests.csproj --no-restore --filter FullyQualifiedName~PostgreSql
+        env:
+          SISTEMAMATERIAIS_POSTGRES_TESTS: "1"
+          ConnectionStrings__PostgreSql: Host=localhost;Port=5432;Database=sistema_materiais_test;Username=postgres;Password=postgres
+
+      - name: Verify formatting
+        run: dotnet format SistemaMateriais.slnx --verify-no-changes --no-restore
+
+      - name: Publish release bundle
+        env:
+          RELEASE_DIR: ${{ runner.temp }}/sistema-materiais-release
+        run: |
+          mkdir -p "$RELEASE_DIR/app"
+          dotnet publish src/SistemaMateriais.Web/SistemaMateriais.Web.csproj --configuration Release --no-restore --output "$RELEASE_DIR/app"
+          cp deploy/postgresql-migrations.sql "$RELEASE_DIR/"
+          printf 'commit=%s\n' "$GITHUB_SHA" > "$RELEASE_DIR/RELEASE-METADATA.txt"
+          printf 'dotnet_sdk=%s\n' "$(dotnet --version)" >> "$RELEASE_DIR/RELEASE-METADATA.txt"
+          printf 'verification=standard tests, PostgreSQL migration/tests, and format steps passed before packaging\n' >> "$RELEASE_DIR/RELEASE-METADATA.txt"
+          for forbidden in "$RELEASE_DIR/app/app.db" "$RELEASE_DIR/app/.env" "$RELEASE_DIR/app/secrets.json"; do
+            if [ -e "$forbidden" ]; then
+              echo "::error::Refusing to package a local database or secret file"
+              exit 1
+            fi
+          done
+          tar -czf "${RELEASE_DIR}.tar.gz" -C "$RELEASE_DIR" .
+          package_name="$(basename "${RELEASE_DIR}.tar.gz")"
+          (cd "$RUNNER_TEMP" && sha256sum "$package_name" > "$package_name.sha256")
+
+      - name: Upload release bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: sistema-materiais-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/sistema-materiais-release.tar.gz
+            ${{ runner.temp }}/sistema-materiais-release.tar.gz.sha256
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0

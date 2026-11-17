@@ -1,0 +1,50 @@
+@page "/Movimentacoes/Entrada"
+@model SistemaMateriais.Web.Pages.Movimentacoes.EntradaModel
+@{
+    ViewData["Title"] = "Registrar entrada";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">ESTOQUE · TI</p>
+        <h2>Registrar entrada</h2>
+        <p class="muted">Toda entrada fica registrada com material, setor, responsável e horário.</p>
+    </div>
+</section>
+
+<section class="content-card" aria-labelledby="receipt-title">
+    <h3 id="receipt-title">Nova entrada de estoque</h3>
+    <div asp-validation-summary="All" class="validation-summary" role="alert"></div>
+    @if (Model.Materials.Count == 0)
+    {
+        <p class="muted" role="status">Não há materiais ativos controlados por quantidade. Registre ativos individualizados na página de Ativos.</p>
+    }
+    else
+    {
+        <form method="post">
+            <input asp-for="SubmissionId" type="hidden" />
+            <div class="field-group">
+                <label asp-for="MaterialId" class="form-label">Material</label>
+                <select asp-for="MaterialId" class="form-control">
+                    <option value="0">Selecione um material</option>
+                    @foreach (var material in Model.Materials)
+                    {
+                        <option value="@material.Id">@material.Code — @material.Name (@material.Unit)</option>
+                    }
+                </select>
+                <span asp-validation-for="MaterialId" class="field-error"></span>
+            </div>
+            <div class="field-group">
+                <label asp-for="Quantity" class="form-label">Quantidade recebida</label>
+                <input asp-for="Quantity" class="form-control" min="0.001" max="999999999.999" step="0.001" inputmode="decimal" />
+                <span asp-validation-for="Quantity" class="field-error"></span>
+            </div>
+            <div class="field-group">
+                <label asp-for="Reference" class="form-label">Referência (opcional)</label>
+                <input asp-for="Reference" class="form-control" maxlength="200" placeholder="Nota fiscal, pedido ou observação" />
+                <span asp-validation-for="Reference" class="field-error"></span>
+            </div>
+            <button class="button-primary" type="submit">Registrar entrada</button>
+        </form>
+    }
+</section>

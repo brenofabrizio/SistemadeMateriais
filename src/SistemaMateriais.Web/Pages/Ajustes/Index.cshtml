@@ -1,0 +1,127 @@
+@page "/Ajustes"
+@model SistemaMateriais.Web.Pages.Ajustes.IndexModel
+@{
+    ViewData["Title"] = "Ajustes de estoque";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">ESTOQUE · TI</p>
+        <h2>Ajustes de estoque</h2>
+        <p class="muted">Registre diferenças justificadas de contagem física. Diferenças negativas reduzem o saldo; o saldo nunca pode ficar negativo.</p>
+    </div>
+</section>
+
+<section class="content-card material-create" aria-labelledby="adjustment-create-title">
+    <h3 id="adjustment-create-title">Registrar diferença</h3>
+    @if (Model.CanDecide)
+    {
+        <p class="muted">Como gestor ou administrador, seu ajuste será aplicado imediatamente ao livro de movimentações.</p>
+    }
+    else
+    {
+        <p class="muted">Seu pedido ficará pendente até a decisão de um gestor ou administrador.</p>
+    }
+    <form method="post" asp-page-handler="Submit">
+        <input type="hidden" asp-for="SubmissionId" />
+        <div asp-validation-summary="All" class="validation-summary" role="alert"></div>
+        <div class="material-form-grid">
+            <div class="field-group">
+                <label asp-for="MaterialId" class="form-label">Material</label>
+                <select asp-for="MaterialId" class="form-control">
+                    <option value="">Selecione um material</option>
+                    @foreach (var material in Model.Materials)
+                    {
+                        <option value="@material.Id">@material.Code — @material.Name (@material.Unit)</option>
+                    }
+                </select>
+                <span asp-validation-for="MaterialId" class="field-error"></span>
+            </div>
+            <div class="field-group">
+                <label asp-for="DeltaQuantity" class="form-label">Diferença (positiva ou negativa)</label>
+                <input asp-for="DeltaQuantity" class="form-control" type="number" step="0.001" />
+                <span asp-validation-for="DeltaQuantity" class="field-error"></span>
+            </div>
+            <div class="field-group material-description-field">
+                <label asp-for="Reason" class="form-label">Justificativa</label>
+                <textarea asp-for="Reason" class="form-control" rows="3" maxlength="500"></textarea>
+                <span asp-validation-for="Reason" class="field-error"></span>
+            </div>
+        </div>
+        <button class="button-primary" type="submit">@(Model.CanDecide ? "Aplicar ajuste" : "Enviar para aprovação")</button>
+    </form>
+</section>
+
+<section class="content-card catalog-card" aria-labelledby="adjustment-requests-title">
+    <div class="catalog-card-heading">
+        <h3 id="adjustment-requests-title">@(Model.CanDecide ? "Pedidos de ajuste recentes" : "Meus pedidos de ajuste")</h3>
+        <span class="count-badge">@Model.Requests.Count</span>
+    </div>
+    @if (Model.Requests.Count == 0)
+    {
+        <div class="catalog-empty" role="status">
+            <p>Nenhum pedido de ajuste encontrado.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="catalog-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Data/hora (UTC)</th>
+                        <th scope="col">Material</th>
+                        <th scope="col">Solicitante</th>
+                        <th scope="col">Diferença</th>
+                        <th scope="col">Situação</th>
+                        <th scope="col">Justificativa</th>
+                        @if (Model.CanDecide)
+                        {
+                            <th scope="col">Decisão</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var request in Model.Requests)
+                    {
+                        <tr>
+                            <td>@request.RequestedAtUtc.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")</td>
+                            <td>@request.Material.Code — @request.Material.Name</td>
+                            <td>@request.RequestedByName</td>
+                            <td>@request.DeltaQuantity.ToString("+0.###;-0.###;0")</td>
+                            <td>@(request.Status switch
+                                {
+                                    InventoryAdjustmentStatus.Pending => "Aguardando aprovação",
+                                    InventoryAdjustmentStatus.Approved => "Aprovado",
+                                    InventoryAdjustmentStatus.Rejected => "Rejeitado",
+                                    _ => request.Status.ToString()
+                                })</td>
+                            <td>
+                                @request.Reason
+                                @if (request.DecidedByName is not null)
+                                {
+                                    <br /><small>Decidido por @request.DecidedByName em @request.DecidedAtUtc?.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")</small>
+                                }
+                            </td>
+                            @if (Model.CanDecide && request.Status == InventoryAdjustmentStatus.Pending)
+                            {
+                                <td>
+                                    <div class="adjustment-actions">
+                                        <form method="post" asp-page-handler="Approve">
+                                            <input type="hidden" asp-for="RequestId" value="@request.Id" />
+                                            <button class="button-primary" type="submit">Aprovar</button>
+                                        </form>
+                                        <form method="post" asp-page-handler="Reject">
+                                            <input type="hidden" asp-for="RequestId" value="@request.Id" />
+                                            <button class="button-secondary" type="submit">Rejeitar</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

@@ -1,0 +1,180 @@
+@page "/Materiais"
+@model SistemaMateriais.Web.Pages.Materiais.IndexModel
+@{
+    ViewData["Title"] = "Materiais";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">CATÁLOGO · TI</p>
+        <h2>Materiais</h2>
+        <p class="muted">Cadastre itens por categoria e escolha como cada material será controlado.</p>
+    </div>
+</section>
+
+<section class="content-card material-create" aria-labelledby="create-material-title">
+    <h3 id="create-material-title">Novo material</h3>
+    @if (Model.Categories.Count == 0)
+    {
+        <p class="muted" role="status">Cadastre uma categoria ativa antes de adicionar materiais.</p>
+    }
+    else
+    {
+        <form method="post" asp-page-handler="Create">
+            <div asp-validation-summary="ModelOnly" class="validation-summary" role="alert"></div>
+            <div class="material-form-grid">
+                <div class="field-group">
+                    <label asp-for="Code" class="form-label">Código</label>
+                    <input asp-for="Code" class="form-control" maxlength="40" autocomplete="off" />
+                    <span asp-validation-for="Code" class="field-error"></span>
+                </div>
+                <div class="field-group">
+                    <label asp-for="Name" class="form-label">Nome</label>
+                    <input asp-for="Name" class="form-control" maxlength="120" autocomplete="off" />
+                    <span asp-validation-for="Name" class="field-error"></span>
+                </div>
+                <div class="field-group">
+                    <label asp-for="CategoryId" class="form-label">Categoria</label>
+                    <select asp-for="CategoryId" class="form-control">
+                        <option value="0">Selecione uma categoria</option>
+                        @foreach (var category in Model.Categories)
+                        {
+                            <option value="@category.Id">@category.Name</option>
+                        }
+                    </select>
+                    <span asp-validation-for="CategoryId" class="field-error"></span>
+                </div>
+                <div class="field-group">
+                    <label asp-for="Unit" class="form-label">Unidade de medida</label>
+                    <input asp-for="Unit" class="form-control" maxlength="20" />
+                    <span asp-validation-for="Unit" class="field-error"></span>
+                </div>
+                <div class="field-group">
+                    <label asp-for="TrackingMode" class="form-label">Tipo de controle</label>
+                    <select asp-for="TrackingMode" class="form-control">
+                        <option value="Quantity">Por quantidade</option>
+                        <option value="IndividualAsset">Unidade individual (série/patrimônio)</option>
+                    </select>
+                    <span asp-validation-for="TrackingMode" class="field-error"></span>
+                </div>
+                <div class="field-group">
+                    <label asp-for="MinimumStock" class="form-label">Estoque mínimo</label>
+                    <input asp-for="MinimumStock" class="form-control" min="0" max="999999999.999" step="0.001" inputmode="decimal" />
+                    <span asp-validation-for="MinimumStock" class="field-error"></span>
+                </div>
+                <div class="field-group material-description-field">
+                    <label asp-for="Description" class="form-label">Descrição (opcional)</label>
+                    <textarea asp-for="Description" class="form-control" maxlength="500" rows="2"></textarea>
+                    <span asp-validation-for="Description" class="field-error"></span>
+                </div>
+            </div>
+            <button class="button-primary" type="submit">Adicionar material</button>
+        </form>
+    }
+</section>
+
+<section class="content-card catalog-card" aria-labelledby="materials-title">
+    <div class="catalog-card-heading">
+        <h3 id="materials-title">Materiais cadastrados</h3>
+        <span class="count-badge">@Model.Materials.Count</span>
+    </div>
+    <form method="get" class="catalog-search" role="search">
+        <div class="catalog-search-controls">
+            <div class="field-group">
+                <label asp-for="CategoryFilter" class="form-label">Categoria</label>
+                <select asp-for="CategoryFilter" class="form-control">
+                    <option value="">Todas as categorias</option>
+                    @foreach (var category in Model.FilterCategories)
+                    {
+                        <option value="@category.Id">@category.Name@(category.IsActive ? string.Empty : " (inativa)")</option>
+                    }
+                </select>
+            </div>
+            <div class="field-group">
+                <label asp-for="ActiveFilter" class="form-label">Situação</label>
+                <select asp-for="ActiveFilter" class="form-control">
+                    <option value="">Todas</option>
+                    <option value="true">Ativos</option>
+                    <option value="false">Inativos</option>
+                </select>
+            </div>
+            <div class="field-group">
+                <label asp-for="TrackingFilter" class="form-label">Tipo de controle</label>
+                <select asp-for="TrackingFilter" class="form-control">
+                    <option value="">Todos</option>
+                    <option value="Quantity">Quantidade</option>
+                    <option value="IndividualAsset">Unidade individual</option>
+                </select>
+            </div>
+            <div class="field-group">
+                <label asp-for="Search" class="form-label">Buscar por código, material ou descrição</label>
+                <input asp-for="Search" class="form-control" type="search" />
+            </div>
+            <button class="button-secondary" type="submit">Aplicar filtros</button>
+        </div>
+    </form>
+    @if (Model.Materials.Count == 0)
+    {
+        <div class="catalog-empty" role="status">
+            <p>Nenhum material cadastrado.</p>
+            <span class="muted">Os materiais do setor TI aparecerão aqui.</span>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="catalog-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Código</th>
+                        <th scope="col">Material</th>
+                        <th scope="col">Categoria</th>
+                        <th scope="col">Unidade</th>
+                        <th scope="col">Controle</th>
+                        <th scope="col">Mínimo</th>
+                        <th scope="col">Saldo</th>
+                        <th scope="col">Situação</th>
+                        <th scope="col">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var material in Model.Materials)
+                    {
+                        <tr>
+                            <td>@material.Code</td>
+                            <td>
+                                <strong>@material.Name</strong>
+                                @if (!string.IsNullOrWhiteSpace(material.Description))
+                                {
+                                    <div class="muted">@material.Description</div>
+                                }
+                            </td>
+                            <td>@material.Category.Name</td>
+                            <td>@material.Unit</td>
+                            <td>@(material.TrackingMode == MaterialTrackingMode.Quantity ? "Quantidade" : "Individual")</td>
+                            <td>@material.MinimumStock.ToString("0.###")</td>
+                            <td>@Model.StockBalances.GetValueOrDefault(material.Id).ToString("0.###")</td>
+                            <td>@(material.IsActive ? "Ativo" : "Inativo")</td>
+                            <td>
+                                <a asp-page="/Materiais/Detalhes" asp-route-id="@material.Id">Ver detalhes</a>
+                                <span aria-hidden="true"> · </span>
+                                <a asp-page="/Materiais/Editar" asp-route-id="@material.Id">Editar</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <nav class="catalog-pagination" aria-label="Paginação de materiais">
+            @if (Model.PageNumber > 1)
+            {
+                <a asp-page="/Materiais/Index" asp-route-PageNumber="@(Model.PageNumber - 1)" asp-route-Search="@Model.Search" asp-route-CategoryFilter="@Model.CategoryFilter" asp-route-ActiveFilter="@Model.ActiveFilter" asp-route-TrackingFilter="@Model.TrackingFilter">Anterior</a>
+            }
+            <span aria-current="page">Página @Model.PageNumber de @Model.TotalPages</span>
+            @if (Model.PageNumber < Model.TotalPages)
+            {
+                <a asp-page="/Materiais/Index" asp-route-PageNumber="@(Model.PageNumber + 1)" asp-route-Search="@Model.Search" asp-route-CategoryFilter="@Model.CategoryFilter" asp-route-ActiveFilter="@Model.ActiveFilter" asp-route-TrackingFilter="@Model.TrackingFilter">Próxima</a>
+            }
+        </nav>
+    }
+</section>

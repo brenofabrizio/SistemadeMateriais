@@ -11,6 +11,9 @@
     <link rel="stylesheet" href="~/SistemaMateriais.Web.styles.css" asp-append-version="true" />
 </head>
 <body>
+    @{
+        var currentPage = ViewContext.RouteData.Values["page"]?.ToString() ?? string.Empty;
+    }
     <a class="skip-link" href="#main-content">Ir para o conteúdo principal</a>
     <div class="app-shell">
         <aside class="sidebar d-none d-lg-flex" aria-label="Menu lateral">
@@ -20,10 +23,15 @@
             </a>
             <nav class="sidebar-nav" aria-label="Navegação principal">
                 <span class="nav-group">ESTOQUE</span>
-                <a class="nav-link active" asp-area="" asp-page="/Index" aria-current="page"><span aria-hidden="true">▦</span> Painel</a>
-                <span class="nav-link is-disabled" aria-disabled="true"><span aria-hidden="true">▤</span> Materiais <small>Em breve</small></span>
-                <span class="nav-link is-disabled" aria-disabled="true"><span aria-hidden="true">↕</span> Movimentações <small>Em breve</small></span>
-                <span class="nav-link is-disabled" aria-disabled="true"><span aria-hidden="true">⌕</span> Histórico <small>Em breve</small></span>
+                <a class="nav-link @(currentPage == "/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Index" aria-current="@(currentPage == "/Index" ? "page" : null)"><span aria-hidden="true">▦</span> Painel</a>
+                <a class="nav-link @(currentPage == "/Categorias/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Categorias/Index" aria-current="@(currentPage == "/Categorias/Index" ? "page" : null)"><span aria-hidden="true">▤</span> Categorias</a>
+                <a class="nav-link @(currentPage == "/Materiais/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Materiais/Index" aria-current="@(currentPage == "/Materiais/Index" ? "page" : null)"><span aria-hidden="true">▣</span> Materiais</a>
+                <a class="nav-link @(currentPage == "/Ativos/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Ativos/Index" aria-current="@(currentPage == "/Ativos/Index" ? "page" : null)"><span aria-hidden="true">⌑</span> Ativos individualizados</a>
+                <a class="nav-link @(currentPage == "/Movimentacoes/Entrada" ? "active" : string.Empty)" asp-area="" asp-page="/Movimentacoes/Entrada" aria-current="@(currentPage == "/Movimentacoes/Entrada" ? "page" : null)"><span aria-hidden="true">↕</span> Registrar entrada</a>
+                    <a class="nav-link @(currentPage == "/Movimentacoes/Saida" ? "active" : string.Empty)" asp-area="" asp-page="/Movimentacoes/Saida" aria-current="@(currentPage == "/Movimentacoes/Saida" ? "page" : null)"><span aria-hidden="true">↘</span> Registrar consumo</a>
+                    <a class="nav-link @(currentPage == "/Emprestimos/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Emprestimos/Index" aria-current="@(currentPage == "/Emprestimos/Index" ? "page" : null)"><span aria-hidden="true">↔</span> Empréstimos</a>
+                    <a class="nav-link @(currentPage == "/Ajustes/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Ajustes/Index" aria-current="@(currentPage == "/Ajustes/Index" ? "page" : null)"><span aria-hidden="true">±</span> Ajustes de estoque</a>
+                <a class="nav-link @(currentPage == "/Movimentacoes/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Movimentacoes/Index" aria-current="@(currentPage == "/Movimentacoes/Index" ? "page" : null)"><span aria-hidden="true">⌕</span> Histórico</a>
             </nav>
             <div class="sidebar-footer">Piloto · Setor de TI</div>
         </aside>
@@ -41,10 +49,15 @@
                 </div>
                 <nav class="offcanvas-body sidebar-nav" aria-label="Navegação principal">
                     <span class="nav-group">ESTOQUE</span>
-                    <a class="nav-link active" asp-area="" asp-page="/Index" aria-current="page"><span aria-hidden="true">▦</span> Painel</a>
-                    <span class="nav-link is-disabled" aria-disabled="true"><span aria-hidden="true">▤</span> Materiais <small>Em breve</small></span>
-                    <span class="nav-link is-disabled" aria-disabled="true"><span aria-hidden="true">↕</span> Movimentações <small>Em breve</small></span>
-                    <span class="nav-link is-disabled" aria-disabled="true"><span aria-hidden="true">⌕</span> Histórico <small>Em breve</small></span>
+                    <a class="nav-link @(currentPage == "/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Index" aria-current="@(currentPage == "/Index" ? "page" : null)"><span aria-hidden="true">▦</span> Painel</a>
+                    <a class="nav-link @(currentPage == "/Categorias/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Categorias/Index" aria-current="@(currentPage == "/Categorias/Index" ? "page" : null)"><span aria-hidden="true">▤</span> Categorias</a>
+                <a class="nav-link @(currentPage == "/Materiais/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Materiais/Index" aria-current="@(currentPage == "/Materiais/Index" ? "page" : null)"><span aria-hidden="true">▣</span> Materiais</a>
+                <a class="nav-link @(currentPage == "/Ativos/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Ativos/Index" aria-current="@(currentPage == "/Ativos/Index" ? "page" : null)"><span aria-hidden="true">⌑</span> Ativos individualizados</a>
+                    <a class="nav-link @(currentPage == "/Movimentacoes/Entrada" ? "active" : string.Empty)" asp-area="" asp-page="/Movimentacoes/Entrada" aria-current="@(currentPage == "/Movimentacoes/Entrada" ? "page" : null)"><span aria-hidden="true">↕</span> Registrar entrada</a>
+                    <a class="nav-link @(currentPage == "/Movimentacoes/Saida" ? "active" : string.Empty)" asp-area="" asp-page="/Movimentacoes/Saida" aria-current="@(currentPage == "/Movimentacoes/Saida" ? "page" : null)"><span aria-hidden="true">↘</span> Registrar consumo</a>
+                    <a class="nav-link @(currentPage == "/Emprestimos/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Emprestimos/Index" aria-current="@(currentPage == "/Emprestimos/Index" ? "page" : null)"><span aria-hidden="true">↔</span> Empréstimos</a>
+                    <a class="nav-link @(currentPage == "/Ajustes/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Ajustes/Index" aria-current="@(currentPage == "/Ajustes/Index" ? "page" : null)"><span aria-hidden="true">±</span> Ajustes de estoque</a>
+                    <a class="nav-link @(currentPage == "/Movimentacoes/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Movimentacoes/Index" aria-current="@(currentPage == "/Movimentacoes/Index" ? "page" : null)"><span aria-hidden="true">⌕</span> Histórico</a>
                 </nav>
             </div>
             <main id="main-content" class="page-content" role="main" tabindex="-1">

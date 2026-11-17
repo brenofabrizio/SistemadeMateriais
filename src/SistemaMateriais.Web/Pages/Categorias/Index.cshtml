@@ -1,0 +1,83 @@
+@page "/Categorias"
+@model SistemaMateriais.Web.Pages.Categorias.IndexModel
+@{
+    ViewData["Title"] = "Categorias";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">CATÁLOGO · TI</p>
+        <h2>Categorias de materiais</h2>
+        <p class="muted">Organize os materiais do setor por categoria.</p>
+    </div>
+</section>
+
+<section class="content-card category-create" aria-labelledby="create-category-title">
+    <h3 id="create-category-title">Nova categoria</h3>
+    <form method="post" asp-page-handler="Create">
+        <div asp-validation-summary="ModelOnly" class="validation-summary" role="alert"></div>
+        <div class="category-form-row">
+            <div class="field-group">
+                <label asp-for="CategoryName" class="form-label">Nome da categoria</label>
+                <input asp-for="CategoryName" class="form-control" maxlength="80" autocomplete="off" />
+                <span asp-validation-for="CategoryName" class="field-error"></span>
+            </div>
+            <button class="button-primary button-inline" type="submit">Adicionar categoria</button>
+        </div>
+    </form>
+</section>
+
+<section class="content-card catalog-card" aria-labelledby="categories-title">
+    <div class="catalog-card-heading">
+        <h3 id="categories-title">Categorias cadastradas</h3>
+        <span class="count-badge">@Model.Categories.Count</span>
+    </div>
+    @if (Model.Categories.Count == 0)
+    {
+        <div class="catalog-empty" role="status">
+            <p>Nenhuma categoria cadastrada.</p>
+            <span class="muted">As categorias disponíveis aparecerão aqui.</span>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="catalog-table">
+                <thead>
+                    <tr><th scope="col">Categoria</th><th scope="col">Situação</th><th scope="col">Ações</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var category in Model.Categories)
+                    {
+                        <tr>
+                            <td>@category.Name</td>
+                            <td>@(category.IsActive ? "Ativa" : "Inativa")</td>
+                            <td>
+                                <form method="post" asp-page-handler="Edit" class="category-inline-edit">
+                                    <input type="hidden" name="EditId" value="@category.Id" />
+                                    <label class="visually-hidden" for="edit-category-@category.Id">Editar @category.Name</label>
+                                    <input id="edit-category-@category.Id" name="EditName" value="@category.Name" class="form-control" maxlength="80" required />
+                                    <button class="button-quiet" type="submit">Salvar</button>
+                                </form>
+                                @if (category.IsActive)
+                                {
+                                    <form method="post" asp-page-handler="Deactivate" class="category-status-action">
+                                        <input type="hidden" name="DeactivateId" value="@category.Id" />
+                                        <button class="button-quiet" type="submit">Desativar</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form method="post" asp-page-handler="Activate" class="category-status-action">
+                                        <input type="hidden" name="ActivateId" value="@category.Id" />
+                                        <button class="button-quiet" type="submit">Ativar</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
