@@ -12,7 +12,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     DatabaseProviderConfiguration.Configure(options, builder.Configuration));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
+builder.Services.AddDefaultIdentity<IdentityUser>(options =>
+    {
+        options.SignIn.RequireConfirmedAccount = false;
+        options.Lockout.AllowedForNewUsers = true;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+        options.Lockout.MaxFailedAccessAttempts = 5;
+    })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.ConfigureApplicationCookie(options =>

@@ -26,6 +26,7 @@ Siga `docs/SPRINTS.md`. A solução ASP.NET Core foi iniciada na Sprint 1.
 
 - `docs/SPRINTS.md` — plano incremental, critérios de aceite e decisões pendentes.
 - `docs/MANUAL-PILOTO.md` — manual rápido em rascunho para revisão com a equipe de TI antes do piloto.
+- `docs/IMPORTACAO-INICIAL.md` — contrato do modelo CSV, validação, prévia, confirmação e gravação atômica.
 - `docs/PLANO-OPERACIONAL-VM.md` — rascunho de preparação; exige validação do responsável antes de qualquer alteração na VM.
 - `docs/PROMPT-BASE.md` — prompt refinado para orientar a implementação por sprint.
 
@@ -40,8 +41,10 @@ dotnet tool restore
 dotnet restore SistemaMateriais.slnx
 dotnet test SistemaMateriais.slnx --no-restore
 dotnet format SistemaMateriais.slnx --verify-no-changes --no-restore
-dotnet run --project src/SistemaMateriais.Web
+dotnet run --project src/SistemaMateriais.Web/SistemaMateriais.Web.csproj --launch-profile https -- '--Database:Provider=Sqlite' '--ConnectionStrings:DefaultConnection=Data Source=app.db;Cache=Shared'
 ```
+
+O perfil `https` inicia a aplicação em `https://localhost:7167` e redireciona o endereço HTTP para HTTPS. Os argumentos fixam SQLite para o desenvolvimento local, mesmo quando configurações do usuário selecionam outro provedor. Se o navegador avisar que o certificado local não é confiável, confie no certificado de desenvolvimento do .NET antes de usar autenticação no navegador.
 
 O script PostgreSQL idempotente em `deploy/postgresql-migrations.sql` contém as migrations locais preparadas e serializa execuções concorrentes com advisory lock; foi aplicado em bancos descartáveis PostgreSQL 17 e testado com referência histórica entre setores. Os testes opt-in exercitam fluxo HTTP de ativos, empréstimos/devoluções/consumo concorrentes, cadastro concorrente de identificadores e o preflight da migration; os testes SQLite também verificam que relações de catálogo e movimentos não cruzam setores. A VM foi identificada como PostgreSQL 16.15, mas as migrations ainda não foram aplicadas nela. A equipe de TI informou homologação concluída; permanecem necessários CI remoto e validação operacional de backup/restauração antes da mudança externa.
 

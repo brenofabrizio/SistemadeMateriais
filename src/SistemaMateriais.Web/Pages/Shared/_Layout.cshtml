@@ -26,6 +26,10 @@
                 <a class="nav-link @(currentPage == "/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Index" aria-current="@(currentPage == "/Index" ? "page" : null)"><span aria-hidden="true">▦</span> Painel</a>
                 <a class="nav-link @(currentPage == "/Categorias/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Categorias/Index" aria-current="@(currentPage == "/Categorias/Index" ? "page" : null)"><span aria-hidden="true">▤</span> Categorias</a>
                 <a class="nav-link @(currentPage == "/Materiais/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Materiais/Index" aria-current="@(currentPage == "/Materiais/Index" ? "page" : null)"><span aria-hidden="true">▣</span> Materiais</a>
+                    @if (User.IsInRole("Administrador") || User.IsInRole("Gestor"))
+                    {
+                        <a class="nav-link @(currentPage == "/Importacao/ModeloCsv" ? "active" : string.Empty)" asp-area="" asp-page="/Importacao/ModeloCsv" aria-current="@(currentPage == "/Importacao/ModeloCsv" ? "page" : null)"><span aria-hidden="true">⇧</span> Importação inicial</a>
+                    }
                 <a class="nav-link @(currentPage == "/Ativos/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Ativos/Index" aria-current="@(currentPage == "/Ativos/Index" ? "page" : null)"><span aria-hidden="true">⌑</span> Ativos individualizados</a>
                 <a class="nav-link @(currentPage == "/Movimentacoes/Entrada" ? "active" : string.Empty)" asp-area="" asp-page="/Movimentacoes/Entrada" aria-current="@(currentPage == "/Movimentacoes/Entrada" ? "page" : null)"><span aria-hidden="true">↕</span> Registrar entrada</a>
                     <a class="nav-link @(currentPage == "/Movimentacoes/Saida" ? "active" : string.Empty)" asp-area="" asp-page="/Movimentacoes/Saida" aria-current="@(currentPage == "/Movimentacoes/Saida" ? "page" : null)"><span aria-hidden="true">↘</span> Registrar consumo</a>
@@ -52,6 +56,10 @@
                     <a class="nav-link @(currentPage == "/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Index" aria-current="@(currentPage == "/Index" ? "page" : null)"><span aria-hidden="true">▦</span> Painel</a>
                     <a class="nav-link @(currentPage == "/Categorias/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Categorias/Index" aria-current="@(currentPage == "/Categorias/Index" ? "page" : null)"><span aria-hidden="true">▤</span> Categorias</a>
                 <a class="nav-link @(currentPage == "/Materiais/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Materiais/Index" aria-current="@(currentPage == "/Materiais/Index" ? "page" : null)"><span aria-hidden="true">▣</span> Materiais</a>
+                    @if (User.IsInRole("Administrador") || User.IsInRole("Gestor"))
+                    {
+                        <a class="nav-link @(currentPage == "/Importacao/ModeloCsv" ? "active" : string.Empty)" asp-area="" asp-page="/Importacao/ModeloCsv" aria-current="@(currentPage == "/Importacao/ModeloCsv" ? "page" : null)"><span aria-hidden="true">⇧</span> Importação inicial</a>
+                    }
                 <a class="nav-link @(currentPage == "/Ativos/Index" ? "active" : string.Empty)" asp-area="" asp-page="/Ativos/Index" aria-current="@(currentPage == "/Ativos/Index" ? "page" : null)"><span aria-hidden="true">⌑</span> Ativos individualizados</a>
                     <a class="nav-link @(currentPage == "/Movimentacoes/Entrada" ? "active" : string.Empty)" asp-area="" asp-page="/Movimentacoes/Entrada" aria-current="@(currentPage == "/Movimentacoes/Entrada" ? "page" : null)"><span aria-hidden="true">↕</span> Registrar entrada</a>
                     <a class="nav-link @(currentPage == "/Movimentacoes/Saida" ? "active" : string.Empty)" asp-area="" asp-page="/Movimentacoes/Saida" aria-current="@(currentPage == "/Movimentacoes/Saida" ? "page" : null)"><span aria-hidden="true">↘</span> Registrar consumo</a>

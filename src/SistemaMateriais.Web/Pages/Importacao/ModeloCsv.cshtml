@@ -1,0 +1,106 @@
+@page "/Importacao/ModeloCsv"
+@model SistemaMateriais.Web.Pages.Importacao.ModeloCsvModel
+@{
+    ViewData["Title"] = "Importação inicial";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">CATÁLOGO · SETOR TI</p>
+        <h2>Modelo de importação inicial</h2>
+        <p class="muted">Baixe o CSV, preencha uma linha por material e confira o mapeamento antes de preparar qualquer carga.</p>
+    </div>
+</section>
+
+<section class="content-card catalog-card import-card" aria-labelledby="download-title">
+    <h3 id="download-title" class="catalog-section-title">Arquivo modelo</h3>
+    <p>O arquivo usa UTF-8 com BOM, ponto e vírgula como separador e vírgula decimal. Não altere a linha de cabeçalho.</p>
+    <p><a class="btn btn-primary" asp-page-handler="Download">Baixar modelo CSV</a></p>
+</section>
+
+<section class="content-card catalog-card import-card" aria-labelledby="preview-title">
+    <h3 id="preview-title" class="catalog-section-title">Validar arquivo</h3>
+    <form method="post" enctype="multipart/form-data" asp-page-handler="Preview">
+        <div class="form-field">
+            <label for="preview-upload">Arquivo CSV (máximo 5 MB)</label>
+            <input id="preview-upload" name="Upload" type="file" accept=".csv,text/csv" />
+        </div>
+        <button class="btn btn-primary" type="submit">Validar e pré-visualizar</button>
+    </form>
+    <p class="muted">A prévia não grava materiais nem movimentos. Corrija todos os erros antes de qualquer carga.</p>
+    @if (Model.ParsedRowCount > 0 || Model.ValidationErrors.Count > 0)
+    {
+        <div role="status" aria-live="polite">
+            <strong>@(Model.ValidRowCount == 1 ? "1 linha válida" : $"{Model.ValidRowCount} linhas válidas") de @Model.ParsedRowCount.</strong>
+        </div>
+    }
+    @if (Model.PreviewRows.Count > 0)
+    {
+        <div class="table-responsive" tabindex="0" aria-label="Prévia dos materiais importáveis; tabela rolável horizontalmente">
+            <table class="catalog-table">
+                <caption>Prévia das linhas válidas; os valores mostrados serão mapeados para o catálogo</caption>
+                <thead>
+                    <tr><th scope="col">Linha</th><th scope="col">Código</th><th scope="col">Material</th><th scope="col">Descrição</th><th scope="col">Categoria</th><th scope="col">Unidade</th><th scope="col">Controle</th><th scope="col">Mínimo</th><th scope="col">Saldo inicial</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.PreviewRows)
+                    {
+                        <tr>
+                            <td>@row.Row</td><td>@row.Code</td><td>@row.Name</td><td>@row.Description</td><td>@row.Category</td><td>@row.Unit</td><td>@row.TrackingMode</td>
+                            <td>@row.MinimumStock.ToString("0.###")</td><td>@row.InitialBalance.ToString("0.###")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    @if (Model.ValidationErrors.Count > 0)
+    {
+        <div class="table-responsive" tabindex="0" aria-label="Erros encontrados; tabela rolável horizontalmente">
+            <table class="catalog-table">
+                <caption>Erros encontrados; nenhum dado foi importado</caption>
+                <thead><tr><th scope="col">Linha</th><th scope="col">Campo</th><th scope="col">Problema</th></tr></thead>
+                <tbody>
+                    @foreach (var error in Model.ValidationErrors)
+                    {
+                        <tr><td>@(error.Row == 0 ? "Arquivo" : error.Row)</td><td>@error.Field</td><td>@error.Message</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    @if (Model.ParsedRowCount > 0 && Model.ValidRowCount == Model.ParsedRowCount && Model.ValidationErrors.Count == 0)
+    {
+        <form method="post" enctype="multipart/form-data" asp-page-handler="Import">
+            <input type="hidden" name="ConfirmationToken" value="@Model.PreviewToken" />
+            <p>Para confirmar, selecione novamente o mesmo arquivo. A validação será repetida antes de gravar qualquer linha.</p>
+            <div class="form-field">
+                <label for="confirmation-upload">Reenviar arquivo validado</label>
+                <input id="confirmation-upload" name="Upload" type="file" accept=".csv,text/csv" />
+            </div>
+            <button class="btn btn-primary" type="submit">@(Model.ValidRowCount == 1 ? "Importar 1 material" : $"Importar {Model.ValidRowCount} materiais")</button>
+        </form>
+    }
+</section>
+
+<section class="content-card catalog-card import-card" aria-labelledby="mapping-title">
+    <h3 id="mapping-title" class="catalog-section-title">Mapeamento das colunas</h3>
+    <div class="table-responsive" tabindex="0" aria-label="Mapeamento das colunas; tabela rolável horizontalmente">
+        <table class="catalog-table">
+            <thead><tr><th scope="col">Coluna</th><th scope="col">Obrigatória</th><th scope="col">Regra e destino</th></tr></thead>
+            <tbody>
+                <tr><th scope="row">Codigo</th><td>Sim</td><td>Código do material, entre 1 e 40 caracteres; espaços externos são removidos, comparação de duplicidade é por maiúsculas invariantes no setor TI.</td></tr>
+                <tr><th scope="row">Nome</th><td>Sim</td><td>Nome do material, entre 2 e 120 caracteres; espaços externos são removidos.</td></tr>
+                <tr><th scope="row">Descricao</th><td>Não</td><td>Descrição, até 500 caracteres; vazio será armazenado como nulo.</td></tr>
+                <tr><th scope="row">Categoria</th><td>Sim</td><td>Categoria já existente e ativa no setor TI; espaços externos são removidos e o nome é comparado após normalização para maiúsculas invariantes. Não cria nem altera categorias.</td></tr>
+                <tr><th scope="row">Unidade</th><td>Sim</td><td>Unidade de medida, até 20 caracteres (por exemplo: unidade, caixa, metro).</td></tr>
+                <tr><th scope="row">TipoControle</th><td>Sim</td><td>Somente <code>Quantity</code> ou <code>IndividualAsset</code>. O segundo identifica ativos por série/patrimônio e não aceita saldo quantitativo.</td></tr>
+                <tr><th scope="row">EstoqueMinimo</th><td>Sim</td><td>Número não negativo, até 3 casas decimais e máximo 999999999,999. Use vírgula decimal; zero é permitido.</td></tr>
+                <tr><th scope="row">SaldoInicial</th><td>Sim</td><td>Quantidade não negativa, até 3 casas decimais e mesmo limite máximo. Para <code>IndividualAsset</code>, deve ser zero; ativos serão cadastrados individualmente depois.</td></tr>
+                <tr><th scope="row">ReferenciaSaldoInicial</th><td>Condicional</td><td>Obrigatória quando SaldoInicial &gt; 0; até 200 caracteres. Será gravada na movimentação de entrada de saldo inicial para auditoria.</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p><strong>Importante:</strong> cada material pertence ao setor TI. Códigos repetidos, categorias inexistentes, campos fora dos limites ou combinações incompatíveis devem ser corrigidos antes da carga. Saldo inicial vira movimento auditável; não é saldo editado diretamente.</p>
+    <p>Este arquivo define o modelo e o mapeamento. A carga só deve ser executada após pré-visualização sem erros, confirmação do responsável pelos dados e cópia de segurança aprovada.</p>
+</section>

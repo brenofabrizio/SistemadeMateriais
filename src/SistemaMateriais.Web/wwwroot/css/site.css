@@ -5,7 +5,7 @@
   --page: hsl(220, 20%, 97%);
   --surface: #fff;
   --text: hsl(222, 47%, 11%);
-  --muted: hsl(215, 16%, 47%);
+  --muted: hsl(215, 16%, 44%);
   --line: hsl(220, 13%, 91%);
   --sidebar-width: 260px;
   --radius: 12px;
@@ -75,6 +75,7 @@ a:hover { color: var(--brand-dark); }
 .form-label { margin-bottom: 5px; font-size: 13px; font-weight: 600; }
 .form-control { min-height: 44px; border-color: var(--line); border-radius: 8px; font-size: 14px; }
 .form-control:focus { border-color: var(--brand); box-shadow: var(--focus); }
+.form-control:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; box-shadow: none; }
 .remember-check { margin: 1px 0 18px; display: flex; align-items: center; gap: 8px; color: #475467; font-size: 13px; }
 .remember-check input { width: 16px; height: 16px; accent-color: var(--brand); }
 .button-primary { min-height: 46px; width: 100%; color: #fff; background: var(--brand); border: 1px solid var(--brand); border-radius: 8px; font: inherit; font-weight: 650; }
@@ -96,7 +97,16 @@ a:hover { color: var(--brand-dark); }
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
 
+.table-responsive { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.catalog-section-title { margin: 0 0 10px; font-size: 16px; font-weight: 700; }
 .catalog-card { overflow: hidden; }
+.import-card { padding: 20px; }
+.workflow-card { padding: 20px; }
+.workflow-card > h3 { margin: 0 0 16px; font-size: 16px; font-weight: 700; }
+.workflow-card .catalog-search { padding: 0; border-bottom: 0; }
+.privacy-notice { padding: 20px; }
+.privacy-notice h2 { margin: 0 0 12px; font-size: 20px; font-weight: 700; }
+.privacy-notice p:last-child { margin-bottom: 0; }
 .catalog-card-heading { min-height: 64px; padding: 16px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); }
 .catalog-card-heading h3 { margin: 0; font-size: 15px; font-weight: 700; }
 .count-badge { min-width: 25px; padding: 2px 8px; color: var(--brand-dark); background: var(--brand-soft); border-radius: 20px; text-align: center; font-size: 12px; font-weight: 700; }

@@ -4,6 +4,7 @@
 **/app.db-shm
 **/app.db-wal
 **/secrets.json
+senhabanco.env
 **/Properties/ServiceDependencies/
 **/Properties/PublishProfiles/
 *.user

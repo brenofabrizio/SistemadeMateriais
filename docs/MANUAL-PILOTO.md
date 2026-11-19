@@ -8,6 +8,8 @@
 2. O piloto opera no setor de TI. Não tente acessar dados de outros setores por URL nem compartilhe sua conta.
 3. Use **Sair** ao terminar em um computador compartilhado. Não salve senhas em arquivos ou mensagens.
 
+Após cinco tentativas consecutivas com senha inválida, a conta fica bloqueada por cinco minutos. Aguarde antes de tentar novamente; se continuar sem acesso, peça ajuda ao administrador.
+
 ## Preparar o catálogo
 
 1. Em **Categorias**, crie a categoria necessária antes de cadastrar materiais.
@@ -17,6 +19,15 @@
    - **Unidade individual**: itens que precisam ser identificados por número de série ou patrimônio.
 4. Consulte saldo, situação, detalhes e filtros na lista de materiais. Use **Editar** para corrigir dados do catálogo; a movimentação de estoque não é feita nessa tela.
 5. Depois da primeira movimentação ou do cadastro de um ativo, o tipo de controle fica bloqueado para evitar reinterpretar o histórico. Se a classificação estiver incorreta, não tente contornar criando outro lançamento; peça ao gestor uma correção planejada.
+
+## Importação inicial por CSV
+
+Administradores e gestores podem abrir **Importação inicial** e baixar o modelo vazio (somente cabeçalho). Crie antes as categorias ativas necessárias no setor TI; a importação não cria categorias nem traz exemplos de materiais.
+
+1. Preencha o CSV respeitando a ordem e os nomes das nove colunas, UTF-8, separador `;` e decimais com vírgula. Consulte `docs/IMPORTACAO-INICIAL.md` para o mapeamento, limites e campos condicionais.
+2. Use **Validar e pré-visualizar**. A tela mostra as linhas válidas e erros por linha/campo; essa etapa não grava materiais nem movimentos. Corrija todos os erros e gere uma nova prévia.
+3. Após uma prévia sem erros, reenvie exatamente o mesmo conteúdo no formulário de confirmação em até 10 minutos. O arquivo é validado novamente antes de gravar; qualquer mudança no arquivo ou na conta exige nova prévia.
+4. Saldo inicial positivo exige referência e vira entrada auditável. A gravação de materiais e movimentos é atômica; não tente importar dados reais sem validar o arquivo aprovado, a contagem esperada e o procedimento de backup/restauração do ambiente.
 
 ## Materiais controlados por quantidade
 

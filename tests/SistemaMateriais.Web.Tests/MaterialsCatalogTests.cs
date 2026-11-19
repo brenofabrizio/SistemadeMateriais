@@ -319,6 +319,41 @@ public sealed class MaterialsCatalogTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task MaterialCodeCanBeReusedInAnotherSector()
+    {
+        var categoryId = await SeedCategoryAsync();
+        var (firstResponse, _) = await SubmitMaterialAsync(categoryId, "MULTI-001", "Teclado TI");
+        Assert.Equal(HttpStatusCode.Redirect, firstResponse.StatusCode);
+
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        db.Sectors.Add(new Sector { Id = 2, Name = "Operações" });
+        var category = new MaterialCategory
+        {
+            Name = "Periféricos",
+            NormalizedName = "PERIFÉRICOS",
+            SectorId = 2
+        };
+        db.MaterialCategories.Add(category);
+        await db.SaveChangesAsync();
+        db.Materials.Add(new Material
+        {
+            Code = "MULTI-001",
+            NormalizedCode = "MULTI-001",
+            Name = "Teclado de Operações",
+            Unit = "unidade",
+            TrackingMode = MaterialTrackingMode.Quantity,
+            MinimumStock = 0,
+            CategoryId = category.Id,
+            SectorId = 2
+        });
+
+        await db.SaveChangesAsync();
+
+        Assert.Equal(2, await db.Materials.CountAsync(material => material.NormalizedCode == "MULTI-001"));
+    }
+
+    [Fact]
     public async Task AssistantCannotCreateMaterials()
     {
         var categoryId = await SeedCategoryAsync();
@@ -3173,6 +3208,382 @@ public sealed class MaterialsCatalogTests : IAsyncLifetime
         db.MaterialCategories.Add(category);
         await db.SaveChangesAsync();
         return category.Id;
+    }
+
+    [Fact]
+    public async Task InitialImportTemplateExplainsTheCompleteColumnMapping()
+    {
+        var response = await _client.GetAsync("/Importacao/ModeloCsv");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
+        Assert.Contains("Codigo", html);
+        Assert.Contains("Nome", html);
+        Assert.Contains("Categoria", html);
+        Assert.Contains("TipoControle", html);
+        Assert.Contains("SaldoInicial", html);
+        Assert.Contains("Saldo inicial vira movimento auditável", html);
+        Assert.Contains("class=\"table-responsive\"", html);
+        Assert.Contains("scope=\"col\"", html);
+        Assert.Contains("aria-labelledby=\"mapping-title\"", html);
+        Assert.Contains("class=\"catalog-section-title\"", html);
+        using var stylesheet = await _client.GetAsync("/css/site.css");
+        Assert.Equal(HttpStatusCode.OK, stylesheet.StatusCode);
+        Assert.Contains(".table-responsive { max-width: 100%; overflow-x: auto;", await stylesheet.Content.ReadAsStringAsync());
+        Assert.Contains(".catalog-section-title {", await stylesheet.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task InitialImportCardsKeepReadableInsetSpacingOnNarrowScreens()
+    {
+        var response = await _client.GetAsync("/Importacao/ModeloCsv");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var html = await response.Content.ReadAsStringAsync();
+        Assert.Equal(3, Regex.Matches(html, "<section class=\"content-card catalog-card import-card\"").Count);
+        using var stylesheet = await _client.GetAsync("/css/site.css");
+        Assert.Equal(HttpStatusCode.OK, stylesheet.StatusCode);
+        Assert.Contains(".import-card { padding: 20px;", await stylesheet.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task MovementWorkflowCardsKeepReadableInsetSpacing()
+    {
+        foreach (var path in new[] { "/Movimentacoes/Entrada", "/Movimentacoes/Saida", "/Movimentacoes" })
+        {
+            var response = await _client.GetAsync(path);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Contains("class=\"content-card workflow-card\"", await response.Content.ReadAsStringAsync());
+        }
+
+        using var stylesheet = await _client.GetAsync("/css/site.css");
+        Assert.Equal(HttpStatusCode.OK, stylesheet.StatusCode);
+        Assert.Contains(".workflow-card { padding: 20px;", await stylesheet.Content.ReadAsStringAsync());
+        Assert.Contains(".workflow-card > h3 {", await stylesheet.Content.ReadAsStringAsync());
+        Assert.Contains(".workflow-card .catalog-search { padding: 0; border-bottom: 0;", await stylesheet.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task PrivacyScreenClearlyStatesThatTheOfficialNoticeIsPending()
+    {
+        var response = await _client.GetAsync("/Privacy");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var rawHtml = await response.Content.ReadAsStringAsync();
+        var html = WebUtility.HtmlDecode(rawHtml);
+        Assert.Contains("Aviso de privacidade", html);
+        Assert.Contains("não contém uma política oficial", html);
+        Assert.DoesNotContain("Privacy Policy", html);
+    }
+
+    [Fact]
+    public async Task InitialImportTemplateDownloadIsUtf8CsvWithMappedColumns()
+    {
+        var response = await _client.GetAsync("/Importacao/ModeloCsv?handler=Download");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("text/csv", response.Content.Headers.ContentType?.MediaType);
+        Assert.Contains("modelo-importacao-materiais.csv", response.Content.Headers.ContentDisposition?.FileName);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        Assert.True(bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF);
+        var csv = System.Text.Encoding.UTF8.GetString(bytes);
+        Assert.Contains("Codigo;Nome;Descricao;Categoria;Unidade;TipoControle;EstoqueMinimo;SaldoInicial;ReferenciaSaldoInicial", csv);
+        Assert.Single(csv.Split("\r\n", StringSplitOptions.RemoveEmptyEntries));
+    }
+
+    [Fact]
+    public async Task InitialImportTemplateIsForbiddenToAssistant()
+    {
+        _client.DefaultRequestHeaders.Add("X-Test-Role", "Assistente");
+
+        var response = await _client.GetAsync("/Importacao/ModeloCsv");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InitialImportCommitIsForbiddenToAssistantAndPersistsNothing()
+    {
+        await SeedCategoryAsync();
+        const string csv = "Codigo;Nome;Descricao;Categoria;Unidade;TipoControle;EstoqueMinimo;SaldoInicial;ReferenciaSaldoInicial\r\n" +
+            "TI-ROLE-DENIED-001;Mouse;USB;Periféricos;unidade;Quantity;0,000;0,000;";
+        var page = await _client.GetAsync("/Importacao/ModeloCsv");
+        var pageHtml = await page.Content.ReadAsStringAsync();
+        var csrf = Regex.Match(pageHtml, @"name=""__RequestVerificationToken""[^>]*value=""([^""]+)""");
+        Assert.True(csrf.Success, "The import page should emit an antiforgery token.");
+
+        using var previewForm = CreateImportUpload(csv, csrf.Groups[1].Value);
+        var previewResponse = await _client.PostAsync("/Importacao/ModeloCsv?handler=Preview", previewForm);
+        var previewHtml = await previewResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, previewResponse.StatusCode);
+        var confirmation = Regex.Match(previewHtml, @"name=""ConfirmationToken""[^>]*value=""([^""]+)""");
+        Assert.True(confirmation.Success, "A valid preview should issue a protected confirmation token.");
+        var previewCsrf = Regex.Match(previewHtml, @"name=""__RequestVerificationToken""[^>]*value=""([^""]+)""");
+        Assert.True(previewCsrf.Success, "The preview response should emit an antiforgery token.");
+
+        _client.DefaultRequestHeaders.Add("X-Test-Role", "Assistente");
+        using var importForm = CreateImportUpload(csv, previewCsrf.Groups[1].Value, confirmation.Groups[1].Value);
+        var importResponse = await _client.PostAsync("/Importacao/ModeloCsv?handler=Import", importForm);
+
+        Assert.Equal(HttpStatusCode.Forbidden, importResponse.StatusCode);
+        await using var verifyScope = _factory.Services.CreateAsyncScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.False(await verifyDb.Materials.AnyAsync(item => item.Code == "TI-ROLE-DENIED-001"));
+    }
+
+    [Fact]
+    public async Task InitialImportPreviewValidCsvShowsOneRowWithoutPersistingIt()
+    {
+        await SeedCategoryAsync();
+        var page = await _client.GetAsync("/Importacao/ModeloCsv");
+        var html = await page.Content.ReadAsStringAsync();
+        var token = Regex.Match(html, @"name=""__RequestVerificationToken""[^>]*value=""([^""]+)""");
+        Assert.True(token.Success, "The page should emit an antiforgery token.");
+
+        using var form = new MultipartFormDataContent();
+        form.Add(new StringContent(token.Groups[1].Value), "__RequestVerificationToken");
+        var csv = "Codigo;Nome;Descricao;Categoria;Unidade;TipoControle;EstoqueMinimo;SaldoInicial;ReferenciaSaldoInicial\r\n" +
+            "TI-IM-001;Mouse;Mouse USB;Periféricos;unidade;Quantity;2,000;5,000;Inventário inicial";
+        var upload = new ByteArrayContent(System.Text.Encoding.UTF8.GetPreamble().Concat(System.Text.Encoding.UTF8.GetBytes(csv)).ToArray());
+        upload.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/csv");
+        form.Add(upload, "Upload", "initial.csv");
+
+        var response = await _client.PostAsync("/Importacao/ModeloCsv?handler=Preview", form);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var previewRawHtml = await response.Content.ReadAsStringAsync();
+        var previewHtml = WebUtility.HtmlDecode(previewRawHtml);
+
+        Assert.Contains("1 linha válida", previewHtml);
+        Assert.Contains("TI-IM-001", previewHtml);
+        Assert.Contains("Mouse USB", previewHtml);
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.False(await db.Materials.AnyAsync(item => item.Code == "TI-IM-001"));
+        Assert.False(await db.InventoryMovements.AnyAsync(movement => movement.Reference == "Inventário inicial"));
+    }
+
+    [Fact]
+    public async Task InitialImportPreviewAndConfirmationHaveDistinctAccessibleFileInputs()
+    {
+        await SeedCategoryAsync();
+        var page = await _client.GetAsync("/Importacao/ModeloCsv");
+        var pageHtml = await page.Content.ReadAsStringAsync();
+        var csrf = Regex.Match(pageHtml, @"name=""__RequestVerificationToken""[^>]*value=""([^""]+)""");
+        Assert.True(csrf.Success, "The import page should emit an antiforgery token.");
+        const string csv = "Codigo;Nome;Descricao;Categoria;Unidade;TipoControle;EstoqueMinimo;SaldoInicial;ReferenciaSaldoInicial\r\n" +
+            "TI-A11Y-IMPORT-001;Mouse;USB;Periféricos;unidade;Quantity;0,000;0,000;";
+        using var form = CreateImportUpload(csv, csrf.Groups[1].Value);
+        var response = await _client.PostAsync("/Importacao/ModeloCsv?handler=Preview", form);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var html = await response.Content.ReadAsStringAsync();
+        Assert.Contains("1 linha válida", WebUtility.HtmlDecode(html));
+        Assert.Contains("Importar 1 material", WebUtility.HtmlDecode(html));
+
+        var inputs = Regex.Matches(html, @"<input\b(?=[^>]*\bname=""Upload"")[^>]*>");
+        Assert.Equal(2, inputs.Count);
+        Assert.All(inputs.Cast<Match>(), input => Assert.Contains("type=\"file\"", input.Value));
+        var ids = inputs.Cast<Match>()
+            .Select(input => Regex.Match(input.Value, @"\bid=""([^""]+)""").Groups[1].Value)
+            .ToArray();
+        Assert.All(ids, Assert.NotEmpty);
+        Assert.Equal(ids.Length, ids.Distinct(StringComparer.Ordinal).Count());
+        foreach (var id in ids)
+        {
+            Assert.Matches($@"<label\b[^>]*for=""{Regex.Escape(id)}""", html);
+        }
+    }
+
+    [Fact]
+    public async Task InitialImportRequiresTheExactFileThatPassedPreview()
+    {
+        await SeedCategoryAsync();
+        var page = await _client.GetAsync("/Importacao/ModeloCsv");
+        var pageHtml = await page.Content.ReadAsStringAsync();
+        var csrf = Regex.Match(pageHtml, @"name=""__RequestVerificationToken""[^>]*value=""([^""]+)""");
+        Assert.True(csrf.Success, "The page should emit an antiforgery token.");
+        const string previewCsv = "Codigo;Nome;Descricao;Categoria;Unidade;TipoControle;EstoqueMinimo;SaldoInicial;ReferenciaSaldoInicial\r\n" +
+            "TI-BOUND-001;Mouse;USB;Periféricos;unidade;Quantity;0,000;1,000;Prévia original";
+        using var previewForm = CreateImportUpload(previewCsv, csrf.Groups[1].Value);
+        var previewResponse = await _client.PostAsync("/Importacao/ModeloCsv?handler=Preview", previewForm);
+        var previewHtml = await previewResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, previewResponse.StatusCode);
+        var confirmation = Regex.Match(previewHtml, @"name=""ConfirmationToken""[^>]*value=""([^""]+)""");
+        Assert.True(confirmation.Success, "A valid preview should issue a protected confirmation token.");
+        var previewCsrf = Regex.Match(previewHtml, @"name=""__RequestVerificationToken""[^>]*value=""([^""]+)""");
+        Assert.True(previewCsrf.Success, "The import form should emit an antiforgery token.");
+
+        const string changedCsv = "Codigo;Nome;Descricao;Categoria;Unidade;TipoControle;EstoqueMinimo;SaldoInicial;ReferenciaSaldoInicial\r\n" +
+            "TI-BOUND-002;Teclado;USB;Periféricos;unidade;Quantity;0,000;1,000;Arquivo alterado";
+        using var importForm = CreateImportUpload(changedCsv, previewCsrf.Groups[1].Value, confirmation.Groups[1].Value);
+        var importResponse = await _client.PostAsync("/Importacao/ModeloCsv?handler=Import", importForm);
+        var resultHtml = WebUtility.HtmlDecode(await importResponse.Content.ReadAsStringAsync());
+
+        Assert.Equal(HttpStatusCode.OK, importResponse.StatusCode);
+        Assert.Contains("A prévia não corresponde ao arquivo", resultHtml);
+        await using var verifyScope = _factory.Services.CreateAsyncScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.False(await verifyDb.Materials.AnyAsync(item => item.Code.StartsWith("TI-BOUND-")));
+        Assert.False(await verifyDb.InventoryMovements.AnyAsync(item => item.Reference == "Arquivo alterado"));
+    }
+
+    [Fact]
+    public async Task InitialImportPreviewConfirmationIsBoundToTheAuthenticatedUser()
+    {
+        await SeedCategoryAsync();
+        _client.DefaultRequestHeaders.Add("X-Test-User-Id", "import-preview-owner");
+        const string csv = "Codigo;Nome;Descricao;Categoria;Unidade;TipoControle;EstoqueMinimo;SaldoInicial;ReferenciaSaldoInicial\r\n" +
+            "TI-CROSS-USER-001;Mouse;USB;Periféricos;unidade;Quantity;0,000;0,000;";
+        var page = await _client.GetAsync("/Importacao/ModeloCsv");
+        var pageHtml = await page.Content.ReadAsStringAsync();
+        var csrf = Regex.Match(pageHtml, @"name=""__RequestVerificationToken""[^>]*value=""([^""]+)""");
+        Assert.True(csrf.Success, "The preview page should emit an antiforgery token.");
+
+        using var previewForm = CreateImportUpload(csv, csrf.Groups[1].Value);
+        var previewResponse = await _client.PostAsync("/Importacao/ModeloCsv?handler=Preview", previewForm);
+        var previewHtml = await previewResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, previewResponse.StatusCode);
+        var confirmation = Regex.Match(previewHtml, @"name=""ConfirmationToken""[^>]*value=""([^""]+)""");
+        Assert.True(confirmation.Success, "A valid preview should issue a protected confirmation token.");
+
+        _client.DefaultRequestHeaders.Remove("X-Test-User-Id");
+        _client.DefaultRequestHeaders.Add("X-Test-User-Id", "different-import-user");
+        var confirmationPage = await _client.GetAsync("/Importacao/ModeloCsv");
+        var confirmationHtml = await confirmationPage.Content.ReadAsStringAsync();
+        var confirmationCsrf = Regex.Match(confirmationHtml, @"name=""__RequestVerificationToken""[^>]*value=""([^""]+)""");
+        Assert.True(confirmationCsrf.Success, "The confirmation page should emit an antiforgery token.");
+        using var importForm = CreateImportUpload(csv, confirmationCsrf.Groups[1].Value, confirmation.Groups[1].Value);
+        var importResponse = await _client.PostAsync("/Importacao/ModeloCsv?handler=Import", importForm);
+        var resultHtml = WebUtility.HtmlDecode(await importResponse.Content.ReadAsStringAsync());
+
+        Assert.Equal(HttpStatusCode.OK, importResponse.StatusCode);
+        Assert.Contains("A prévia não corresponde ao arquivo", resultHtml);
+        await using var verifyScope = _factory.Services.CreateAsyncScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.False(await verifyDb.Materials.AnyAsync(item => item.Code == "TI-CROSS-USER-001"));
+    }
+
+    [Fact]
+    public async Task InitialImportCommitCreatesTypedMaterialsAndOnlyNeededOpeningMovements()
+    {
+        var categoryId = await SeedCategoryAsync();
+        const string csv = "Codigo;Nome;Descricao;Categoria;Unidade;TipoControle;EstoqueMinimo;SaldoInicial;ReferenciaSaldoInicial\r\n" +
+            "TI-IM-002;Teclado;USB;Periféricos;unidade;Quantity;1,000;7,000;Inventário auditado\r\n" +
+            "TI-IM-003;Monitor;HDMI;Periféricos;unidade;IndividualAsset;0,000;0,000;";
+        var initialPage = await _client.GetAsync("/Importacao/ModeloCsv");
+        var initialHtml = await initialPage.Content.ReadAsStringAsync();
+        var initialToken = Regex.Match(initialHtml, @"name=""__RequestVerificationToken""[^>]*value=""([^""]+)""");
+        Assert.True(initialToken.Success, "The page should emit an antiforgery token.");
+        using (var previewForm = CreateImportUpload(csv, initialToken.Groups[1].Value))
+        {
+            var preview = await _client.PostAsync("/Importacao/ModeloCsv?handler=Preview", previewForm);
+            Assert.Equal(HttpStatusCode.OK, preview.StatusCode);
+            var previewHtml = await preview.Content.ReadAsStringAsync();
+            Assert.Contains("2 linhas válidas", WebUtility.HtmlDecode(previewHtml));
+            var previewConfirmation = Regex.Match(previewHtml, @"name=""ConfirmationToken""[^>]*value=""([^""]+)""");
+            Assert.True(previewConfirmation.Success, "A valid preview should issue a protected confirmation token.");
+            initialToken = previewConfirmation;
+        }
+
+        var confirmPage = await _client.GetAsync("/Importacao/ModeloCsv");
+        var confirmHtml = await confirmPage.Content.ReadAsStringAsync();
+        var confirmToken = Regex.Match(confirmHtml, @"name=""__RequestVerificationToken""[^>]*value=""([^""]+)""");
+        Assert.True(confirmToken.Success, "The confirmation page should emit an antiforgery token.");
+        using var importForm = CreateImportUpload(csv, confirmToken.Groups[1].Value, initialToken.Groups[1].Value);
+        var response = await _client.PostAsync("/Importacao/ModeloCsv?handler=Import", importForm);
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var quantityMaterial = await db.Materials.SingleAsync(item => item.Code == "TI-IM-002");
+        var assetMaterial = await db.Materials.SingleAsync(item => item.Code == "TI-IM-003");
+        Assert.Equal(categoryId, quantityMaterial.CategoryId);
+        Assert.Equal(MaterialTrackingMode.Quantity, quantityMaterial.TrackingMode);
+        Assert.Equal(MaterialTrackingMode.IndividualAsset, assetMaterial.TrackingMode);
+        var movement = await db.InventoryMovements.SingleAsync(item => item.MaterialId == quantityMaterial.Id);
+        Assert.Equal(InventoryMovementType.Entry, movement.Type);
+        Assert.Equal(7m, movement.Quantity);
+        Assert.Equal("Inventário auditado", movement.Reference);
+        Assert.Equal("pilot-user", movement.ActorUserId);
+        Assert.Equal(1, movement.SectorId);
+        Assert.Equal(DateTimeOffset.UtcNow.Offset, movement.CreatedAtUtc.Offset);
+        Assert.False(await db.InventoryMovements.AnyAsync(item => item.MaterialId == assetMaterial.Id));
+    }
+
+    [Fact]
+    public async Task InitialImportRejectsEntireBatchWhenAnyRowHasInvalidQuantity()
+    {
+        await SeedCategoryAsync();
+        const string csv = "Codigo;Nome;Descricao;Categoria;Unidade;TipoControle;EstoqueMinimo;SaldoInicial;ReferenciaSaldoInicial\r\n" +
+            "TI-BULK-OK;Mouse;USB;Periféricos;unidade;Quantity;0,000;0,000;\r\n" +
+            "TI-BULK-BAD;Teclado;USB;Periféricos;unidade;Quantity;1.234,000;0,000;";
+        var page = await _client.GetAsync("/Importacao/ModeloCsv");
+        var html = await page.Content.ReadAsStringAsync();
+        var token = Regex.Match(html, @"name=""__RequestVerificationToken""[^>]*value=""([^""]+)""");
+        Assert.True(token.Success, "The page should emit an antiforgery token.");
+        using var form = CreateImportUpload(csv, token.Groups[1].Value);
+
+        var response = await _client.PostAsync("/Importacao/ModeloCsv?handler=Import", form);
+        var resultHtml = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("EstoqueMinimo", resultHtml);
+        Assert.Contains("<td>3</td>", resultHtml);
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.False(await db.Materials.AnyAsync(item => item.Code.StartsWith("TI-BULK-")));
+        Assert.False(await db.InventoryMovements.AnyAsync(movement => movement.Material.Code.StartsWith("TI-BULK-")));
+    }
+
+    [Fact]
+    public async Task InitialImportRollsBackCatalogWhenOpeningMovementCannotBeSaved()
+    {
+        await SeedCategoryAsync();
+        var page = await _client.GetAsync("/Importacao/ModeloCsv");
+        var html = await page.Content.ReadAsStringAsync();
+        var token = Regex.Match(html, @"name=""__RequestVerificationToken""[^>]*value=""([^""]+)""");
+        Assert.True(token.Success, "The page should emit an antiforgery token.");
+        const string csv = "Codigo;Nome;Descricao;Categoria;Unidade;TipoControle;EstoqueMinimo;SaldoInicial;ReferenciaSaldoInicial\r\n" +
+            "TI-ROLLBACK-001;Mouse;USB;Periféricos;unidade;Quantity;0,000;2,000;Entrada inicial";
+        using var previewForm = CreateImportUpload(csv, token.Groups[1].Value);
+        var previewResponse = await _client.PostAsync("/Importacao/ModeloCsv?handler=Preview", previewForm);
+        var previewHtml = await previewResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, previewResponse.StatusCode);
+        var confirmation = Regex.Match(previewHtml, @"name=""ConfirmationToken""[^>]*value=""([^""]+)""");
+        Assert.True(confirmation.Success, "A valid preview should issue a protected confirmation token.");
+        var previewCsrf = Regex.Match(previewHtml, @"name=""__RequestVerificationToken""[^>]*value=""([^""]+)""");
+        Assert.True(previewCsrf.Success, "The import form should emit an antiforgery token.");
+        await using (var setupScope = _factory.Services.CreateAsyncScope())
+        {
+            var setupDb = setupScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            await setupDb.Database.ExecuteSqlRawAsync(
+                "CREATE TRIGGER FailOpeningMovement BEFORE INSERT ON InventoryMovements BEGIN SELECT RAISE(ABORT, 'test failure'); END;");
+        }
+
+        using var form = CreateImportUpload(csv, previewCsrf.Groups[1].Value, confirmation.Groups[1].Value);
+        var response = await _client.PostAsync("/Importacao/ModeloCsv?handler=Import", form);
+        var resultHtml = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("A carga não foi aplicada", resultHtml);
+        await using var verifyScope = _factory.Services.CreateAsyncScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.False(await verifyDb.Materials.AnyAsync(item => item.Code == "TI-ROLLBACK-001"));
+        Assert.False(await verifyDb.InventoryMovements.AnyAsync(movement => movement.Reference == "Entrada inicial"));
+    }
+
+    private static MultipartFormDataContent CreateImportUpload(string csv, string token, string? confirmationToken = null)
+    {
+        var form = new MultipartFormDataContent();
+        form.Add(new StringContent(token), "__RequestVerificationToken");
+        if (confirmationToken is not null)
+        {
+            form.Add(new StringContent(confirmationToken), "ConfirmationToken");
+        }
+        var bytes = System.Text.Encoding.UTF8.GetPreamble().Concat(System.Text.Encoding.UTF8.GetBytes(csv)).ToArray();
+        var upload = new ByteArrayContent(bytes);
+        upload.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/csv");
+        form.Add(upload, "Upload", "initial.csv");
+        return form;
     }
 
     private async Task<(HttpResponseMessage Response, string Html)> SubmitMaterialAsync(

@@ -3,6 +3,8 @@
 @{
     Layout = null;
     ViewData["Title"] = "Entrar";
+    var usernameInvalid = ViewData.ModelState.TryGetValue("Input.UserName", out var usernameEntry) && usernameEntry.Errors.Count > 0;
+    var passwordInvalid = ViewData.ModelState.TryGetValue("Input.Password", out var passwordEntry) && passwordEntry.Errors.Count > 0;
 }
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -28,13 +30,13 @@
                 <div asp-validation-summary="ModelOnly" class="validation-summary" role="alert"></div>
                 <div class="field-group">
                     <label asp-for="Input.UserName" class="form-label"></label>
-                    <input asp-for="Input.UserName" class="form-control" autocomplete="username" autofocus />
-                    <span asp-validation-for="Input.UserName" class="field-error"></span>
+                    <input asp-for="Input.UserName" class="form-control" autocomplete="username" aria-describedby="username-error" aria-invalid="@(usernameInvalid ? "true" : null)" autofocus />
+                    <span id="username-error" asp-validation-for="Input.UserName" class="field-error"></span>
                 </div>
                 <div class="field-group">
                     <label asp-for="Input.Password" class="form-label"></label>
-                    <input asp-for="Input.Password" class="form-control" autocomplete="current-password" />
-                    <span asp-validation-for="Input.Password" class="field-error"></span>
+                    <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-describedby="password-error" aria-invalid="@(passwordInvalid ? "true" : null)" />
+                    <span id="password-error" asp-validation-for="Input.Password" class="field-error"></span>
                 </div>
                 <label class="remember-check">
                     <input asp-for="Input.RememberMe" />
