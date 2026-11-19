@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/complete-materials-sprints]
   pull_request:
 
 permissions:
@@ -72,7 +72,7 @@ jobs:
           printf 'commit=%s\n' "$GITHUB_SHA" > "$RELEASE_DIR/RELEASE-METADATA.txt"
           printf 'dotnet_sdk=%s\n' "$(dotnet --version)" >> "$RELEASE_DIR/RELEASE-METADATA.txt"
           printf 'verification=standard tests, PostgreSQL migration/tests, and format steps passed before packaging\n' >> "$RELEASE_DIR/RELEASE-METADATA.txt"
-          for forbidden in "$RELEASE_DIR/app/app.db" "$RELEASE_DIR/app/.env" "$RELEASE_DIR/app/secrets.json"; do
+          for forbidden in "$RELEASE_DIR/app/app.db"* "$RELEASE_DIR/app/appsettings.Development.json" "$RELEASE_DIR/app/"*.env "$RELEASE_DIR/app/secrets.json"; do
             if [ -e "$forbidden" ]; then
               echo "::error::Refusing to package a local database or secret file"
               exit 1
